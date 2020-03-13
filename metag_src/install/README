@@ -1,0 +1,51 @@
+#==============================================#
+#	README for metag and metag_setup
+#----------------------------------------------#
+
+
+# Installation
+
+Open a terminal in the "install" directory of
+the metag_src. Execute the setup using
+
+    ./metag_setup.sh
+
+and follow the onscreen instructions.
+If you want to learn more about metag_setup
+and the other possibilities to install it,
+type:
+
+    ./metag_setup.sh -h
+
+
+# First run
+
+Open a terminal in the directory in which you
+have installed MetaG. Type
+
+    ./calculate/metag.sh -h
+
+to learn which parameters are mandatory for
+your first metag run.
+
+You can obtain a database in MetaG format
+from the supplemental directory in this repository.
+
+
+# Writing config files
+
+Look at the help function of metag_setup
+to learn how to write config files.
+
+
+# Removing metag
+
+Look at the help function of metag_setup
+to learn how to uninstall metag.
+
+
+# Need help?
+
+Check the help functions and man pages first.
+See AUTHOR section of help or man pages to
+learn how to contact the developers.

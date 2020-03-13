@@ -1,0 +1,19 @@
+# supplemental
+## files
+### db
+Databases used in the MetaG paper.
+### query
+Samples used in the MetaG paper.
+
+## scripts
+These scripts were used to generate the databases for MetaG and to train
+the program. You can find information on how to use the scripts in the
+publication (especially in the Supplemental Materials). Also, a short description
+is given in the header of each file.
+### db
+Scripts used to generate the database files needed for MetaG.
+Please note that we manually currated the database files in /files/db .
+However, this affects only a minor portion of entries. 
+### train
+Scripts to obtain the optimal parameters for MetaG either using the
+known abundance of taxa or the known origin of each read.
