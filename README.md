@@ -25,9 +25,9 @@ Supplemental files and scripts for the publication. See [README](../../blob/mast
 for further details.
 
 ## Authors
-Felix Manske, felix.manske@uni-muenster.de
-Norbert Grundmann
-Author for correspondence: Wojciech Makalowski, wojmak@uni-muenster.de
+* Felix Manske, felix.manske@uni-muenster.de
+* Norbert Grundmann
+* Author for correspondence: Wojciech Makalowski, wojmak@uni-muenster.de
 
 
 ## COPYRIGHT
