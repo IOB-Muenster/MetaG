@@ -7,7 +7,7 @@ This directory contains the query files used to test MetaG.
 * miseqSimulatedViruses.fa: Contains simulated MiSeq data from three viruses
 * The MinION mock sample can be accessed from the SRA using run ID SRR8029984.
 
-Please refer to its preprint at /foo/bar (coming soon).
+Please refer to its [publication](https://doi.org/10.1101/2020.03.13.991190).
 
 # Output
 The output of MetaG for the query files is available on the MetaG website.

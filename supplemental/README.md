@@ -8,7 +8,7 @@ Samples used in the MetaG paper.
 ## scripts
 These scripts were used to generate the databases for MetaG and to train
 the program. You can find information on how to use the scripts in the
-publication (especially in the Supplemental Materials). Also, a short description
+[publication](https://doi.org/10.1101/2020.03.13.991190) (especially in the Supplemental Materials). Also, a short description
 is given in the header of each file.
 ### db
 Scripts used to generate the database files needed for MetaG.
