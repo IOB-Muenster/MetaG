@@ -63,6 +63,10 @@
 #			 The csv file must be in the same directory as this script. The
 #			 output will also be created in the directory of the script.
 #
+#			 GenBank IDs must only be used once. Otherwise, the duplicate entry/entries
+#			 will be lost completely. You may want to report duplicate IDs to the
+#			 ICTV team.
+#
 # KNOWN ISSUES: IDs which are not reported by the NCBI API are present in
 #				the tax.VMR.txt and patho.VMR.txt, but not in the VMR.fa.
 #				Additional taxa in these files do not influence downstream
@@ -89,7 +93,7 @@ my $outSeqP = "VMR.fa";
 my $rankNames = "realm;subrealm;kingdom;subkingdom;phylum;subphylum;class;subclass;order;suborder;family;subfamily;genus;subgenus;species;isolate_seqName";
 
 
-my @ids = ();
+my %ids = ();
 
 print "Reading input taxonomy\n";
 
@@ -145,7 +149,16 @@ while(<INTAX>) {
 			$id =~ s/^ //;
 		}
 		
-		push(@ids, $id);
+		if (exists $ids{$id}) {
+			my $grep = `grep $id $inTaxP`;
+			print "ERROR: GenBank id $id is not unique. Removed duplicate entry.\n";
+			print "In INPUT:\n$grep\n";
+			next;
+		}
+		else {
+			$ids{$id} = undef;
+		}
+
 		
 		if ($seqName ne "") {
 			print OUTTAX $id.";".$tax."_".$seqName."\n";
@@ -177,6 +190,8 @@ close(OUTHOST);
 #=============================================================================================#
 # Requesting nucleotide sequences by genebank accession from NCBI.
 #---------------------------------------------------------------------------------------------#
+my @ids = keys(%ids);
+my $i = 0;
 
 print "Web request to NCBI: ".@ids." sequences. This may take a while.\n";
 
@@ -220,9 +235,11 @@ foreach my $entry (@entries) {
 	
 	$seq .= "\n";
 	
-	print OUTSEQ ">".$id."\n".$seq
+	print OUTSEQ ">".$id."\n".$seq;
+	
+	$i++;
 }
 close(OUTSEQ);
 
-
+print "Retrieved $i sequences from NCBI.\n";
 print "Finished!\n";
