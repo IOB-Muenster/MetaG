@@ -143,7 +143,7 @@ while(<META>) {
 	my $host = $splits[1];
 	
 	# Some people can't spell Homo sapiens :)
-	$host = "Human" if ($host =~ m/Human/ or $host =~ m/Homo\s*sap/);
+	$host = "Human" if ($host =~ m/^Human/ or $host =~ m/^Homo/);
 	$host =~ s/;/,/g;
 	
 	my $resist = $splits[2];
