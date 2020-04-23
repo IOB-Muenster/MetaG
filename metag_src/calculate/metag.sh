@@ -941,4 +941,4 @@ ENDTIME=$(date +"%s")
 CALCTIME=$(($ENDTIME-$STARTTIME))
 
 printf "DONE\n"
-printf 'Processing time: %02dh:%02dm:%02ds\n\n' $(($CALCTIME/3600)) $(($CALCTIME%3600/60)) $(($CALCTIME%60))
+printf 'Finished in: %02dh:%02dm:%02ds\n\n' $(($CALCTIME/3600)) $(($CALCTIME%3600/60)) $(($CALCTIME%60))
