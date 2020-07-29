@@ -70,15 +70,14 @@
 # KNOWN ISSUES: IDs which are not reported by the NCBI API are present in
 #				the tax.VMR.txt and patho.VMR.txt, but not in the VMR.fa.
 #				Additional taxa in these files do not influence downstream
-#				analyses.
+#				analyses. You may want to check, if the GenBank IDs are valid
+#				and contact NCBI or ICTV, depending on the situation.
 #-------------------------------------------------------------------------------------#
 
 
 use strict;
 use warnings;
 use LWP::UserAgent();
-
-print "Starting...\n";
 
 #=====================================================================================#
 # Read input taxonomy.
@@ -95,7 +94,7 @@ my $rankNames = "realm;subrealm;kingdom;subkingdom;phylum;subphylum;class;subcla
 
 my %ids = ();
 
-print "Reading input taxonomy\n";
+print "INFO: Reading input taxonomy from $inTaxP\n";
 
 open(OUTTAX, ">", $outTaxP);
 print OUTTAX "#".$rankNames."\n";
@@ -104,14 +103,11 @@ open(OUTHOST, ">", $outHostP);
 
 open(INTAX, "<", $inTaxP);
 while(<INTAX>) {
-	
 	#Skip header
 	next if ($_ =~ m/GENBANK accession/);
 	
 	chomp($_);
-	
 	$_ =~s/"//g;
-
 	
 	my @splits = split("\t", $_);
 		
@@ -148,15 +144,16 @@ while(<INTAX>) {
 			$id = $seqNames[1];
 			$id =~ s/^ //;
 		}
+		# Remove trailing and leading whitespaces in ids
+        $id =~ s/^\s+|\s+$//; 
 		
 		if (exists $ids{$id}) {
-			my $grep = `grep $id $inTaxP`;
 			print "ERROR: GenBank id $id is not unique. Removed duplicate entry.\n";
-			print "In INPUT:\n$grep\n";
+            print "\tCURRENT: $tax" . ": $seqName\n\tFIRST SEEN:" . $ids{$id} . "\n";
 			next;
 		}
 		else {
-			$ids{$id} = undef;
+			$ids{$id} = $tax . ": $seqName";
 		}
 
 		
@@ -192,54 +189,87 @@ close(OUTHOST);
 #---------------------------------------------------------------------------------------------#
 my @ids = keys(%ids);
 my $i = 0;
+my $chunkSize = 1000;
 
-print "Web request to NCBI: ".@ids." sequences. This may take a while.\n";
-
-# POST request to NCBI eFetch
-my $ua = LWP::UserAgent->new;
-$ua->timeout(30);
-$ua->env_proxy;
-
-# All genbank IDs in the input taxonomy
-my $query = join(",", @ids);
-my %query = ("db"=>"nuccore", "id"=>$query, "rettype"=>"fasta", "retmode"=>"text");
-
-# Response from NCBI
-my $seq = $ua->post("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi", \%query); # no www. causes error!!!
-
-# Crash, if there was an error
-die "Error querying NCBI\n" unless $seq->is_success;
-
-# Response body
-$seq = $seq->content;
+print "INFO: Web request to NCBI: ".@ids.
+	" sequences. Sending chunks of $chunkSize. This may take a while.\n";
 
 # Obtain sequences and IDs and write as fasta file
 open(OUTSEQ ,">", $outSeqP);
 
-my @entries = split(">", $seq);
-chomp(@entries);
+my @entries = ();
+
+while (@ids) {
+        my @queries = splice (@ids, 0, $chunkSize);
+        
+        # POST request to NCBI eFetch
+        my $ua = LWP::UserAgent->new;
+        $ua->timeout(30);
+        $ua->env_proxy;
+
+        # All genbank IDs in the input taxonomy
+        my $query = join(",", @queries);
+        my %query = ("db"=>"nuccore", "id"=>$query, "rettype"=>"fasta", "retmode"=>"text");
+
+        # Response from NCBI
+        my $seq = $ua->post("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi", \%query); # no www. causes error!!!
+
+        # Crash, if there was an error
+        die "ERROR: Error querying NCBI\n" unless $seq->is_success;
+
+        # Response body
+        $seq = $seq->content;
+        $seq =~ s/^\s+|\s+$//;
+        $seq =~ s/^>//;
+        
+        my @res = split(">", $seq);
+        chomp(@res);
+        push(@entries, @res);
+
+        # Maximum three request per second
+        select(undef, undef, undef, 0.34);
+}
+
+print "INFO: Retrieved " . @entries . " sequences from NCBI.\n";
 
 foreach my $entry (@entries) {
-	next if ($entry eq "");
-	my @lines = split("\n", $entry);
-	
-	my $id = (split(" ", $lines[0]))[0];
-	
-	# Loose version tag
-	$id = (split(/\./, $id))[0];
-	my $seq = "";
-	
-	foreach my $line (@lines[1..$#lines]) {
-		$seq .= $line;		
-	}
-	
-	$seq .= "\n";
-	
-	print OUTSEQ ">".$id."\n".$seq;
-	
-	$i++;
+        next if ($entry eq "");
+        my @lines = split("\n", $entry);
+        
+        my $id = (split(" ", $lines[0]))[0];
+        
+        # Some GenBank ids were sent without a version tag,
+        # but I received a response with a tag.
+        # In that case, I need to save the sequence data
+        # without the tag.
+        # If I queried GenBank with a tag, I want to keep it.
+        # This keeps the naming consistent between the output files.
+        my $idNoTag = (split(/\./, $id))[0];
+        
+        if (exists $ids{$id}) {
+                delete $ids{$id}
+        }
+        elsif (exists $ids{$idNoTag}) {
+                delete $ids{$idNoTag};
+                $id = $idNoTag
+        }
+        else {
+                next;
+        }
+
+        my $seq = "";
+        
+        foreach my $line (@lines[1..$#lines]) {
+                $seq .= $line;          
+        }
+        
+        $seq .= "\n";
+        
+        print OUTSEQ ">".$id."\n".$seq;
+        
+        $i++;
 }
 close(OUTSEQ);
 
-print "Retrieved $i sequences from NCBI.\n";
-print "Finished!\n";
+print "WARNING: Could not find GenBank ids: " . join(", ", keys(%ids)) . "\n" if (%ids);
+print "\nFinished!\n";
