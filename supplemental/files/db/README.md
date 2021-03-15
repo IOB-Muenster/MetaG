@@ -1,10 +1,11 @@
 # Access
 Due to file size limitations, the databases can be found here:
 
-* ICTV_vmr MSL34 version November 27: http://bioinformatics.uni-muenster.de/tools/metag/download/ICTV_vmr.zip
-* MTXssuLSU from Metaxa2.2 : http://bioinformatics.uni-muenster.de/tools/metag/download/MTXssuLSU.zip
-* PATRIC February 2019: http://bioinformatics.uni-muenster.de/tools/metag/download/PATRIC.zip
-* RDP16s28s version 11, update 5: http://bioinformatics.uni-muenster.de/tools/metag/download/RDP16s28s.zip
+* ICTV_vmr MSL34 version November 27: http://bioinformatics.uni-muenster.de/tools/metag/download/primary/ICTV_vmr.zip
+* MTXssuLSU from Metaxa2.2 : http://bioinformatics.uni-muenster.de/tools/metag/download/primary/MTXssuLSU.zip
+* PATRIC February 2019: http://bioinformatics.uni-muenster.de/tools/metag/download/primary/PATRIC.zip
+* RDP16s28s version 11, update 5: http://bioinformatics.uni-muenster.de/tools/metag/download/primary/RDP16s28s.zip
+* RefSeq March 2021: http://www.bioinformatics.uni-muenster.de/tools/metag/download/refseq.zip
 
 # How to use the databases with MetaG?
 Supply "tax." files as -ltax and "patho." files as -pdbPath.
@@ -66,3 +67,14 @@ Cole JR, Wang Q, Fish JA, Chai B, McGarrell DM, Sun Y, Brown CT,
 Porras-Alfaro A, Kuske CR, Tiedje JM. 2014.
 	Ribosomal Database Project: data and tools for high throughput rRNA analysis.
 	Nucleic Acids Res 42: D633–D642. doi:10.1093/nar/gkt1244.
+	
+## RefSeq Targeted Loci March 2021
+The database contains bacterial (16S, 23S, 5S rRNA), archaeal (16S, 23S, 5S rRNA) and fungal
+sequences (18S, 28S rRNA, ITS) downloaded from ftp://ftp.ncbi.nlm.nih.gov/refseq/TargetedLoci/ .
+
+Sayers EW, Beck J, Bolton EE, Bourexis D, Brister JR, Canese K, Comeau DC,
+Funk K, Kim S, Klimke W, et al. 2021.
+	Database resources of the National Center for Biotechnology Information.
+	Nucleic Acids Res 49: D10–D17. doi:10.1093/nar/gkaa892
+
+
