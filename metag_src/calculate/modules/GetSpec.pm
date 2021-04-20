@@ -72,9 +72,9 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 			    	my $conf = $confidences[$i + $count];
 			    	
 			    	if ($conf == 0) {
-						$mean = undef;
-						last;
-					}
+					$mean = 0;
+					last;
+				}
 			        $tmp *= $conf;
 			        $count++;
 			    }
@@ -151,7 +151,7 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 	sub getConf {
 		#$taxaStat{$taxon} = [$eValue, $aScore, $taxCount]
 		my %taxaStat = %{$_[0]};
-		
+
 		#One taxon means highest confidence, exit sub
 		my $taxNum = keys(%taxaStat);
 		return 1 if ($taxNum == 1);
@@ -694,15 +694,16 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 						else {
 							# Calculate mean of confidences
 							$mean = getMean(\@confidences, $type);
-							$mean = sprintf("%.2f", $mean);
-						}
 										
-						# Handle errors: Geometric for values containing 0
-						if (not defined $mean) {
-							print "Error while calculating average confidence. Did you try to calculate geometric mean with 0 in input?\n";
-							$mean = "Error";
+							# Handle errors
+							if (not defined $mean) {
+								print "Error while calculating average confidence.\n";
+								$mean = "ERROR";
+							}
+							else {
+								$mean = sprintf("%.2f", $mean);
+							}
 						}
-						
 						# Mean and abbreviation of selected mean type
 						$mean = $mean."[".substr($type, 0, 1)."]";
 						push(@prints, [$count, $taxon, $mean])
