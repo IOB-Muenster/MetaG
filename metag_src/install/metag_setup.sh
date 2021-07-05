@@ -61,7 +61,7 @@ checkDir () {
 		printf "WARNING: Directory ${DIR} does not exist.\n"
 		
 		while [ 0=0 ]; do
-			printf "Do you wish to create ${DIR}? (yes, no, q/Q to quit) "
+			printf "MSG: Do you wish to create ${DIR}? (yes, no, q/Q to quit) "
 			read ANSWER
 			checkAbort
 			checkYesNo
@@ -286,9 +286,13 @@ installAll () {
 	# Check dependencies
 	printf "INFO: Checking dependencies\n"
 	
-	# MetaG directories calculate/ and krona/ must be there
 	INSTALL=$(dirname $0)
-	CALC=$( echo "$INSTALL" | sed s/install$/calculate/ )
+	
+	# Get the path of calculate with standard utilities, even if user is in install folder.
+	# 1) Get dirname of this script (install directory)
+	# 2) Go to install directory and get full path via pwd; go back
+	# 3) Replace "install" with "calculate". 
+	CALC=$(echo $(cd $INSTALL && pwd && cd - > /dev/null) | sed s/install$/calculate/)
 	
 	if [ ! -d $CALC ]; then
 		printf "ERROR: Missing directories for MetaG.\n"
@@ -326,7 +330,7 @@ EOF
 		checkLASTdep
 		
 		# Check, if LAST can be downloaded
-		ping -c 2 -W 5 $LASTWEB > /dev/null 2>&1 || { printf "ERROR: Could not reach ${LASTWEB}. Check internet connection.\n"; exit 1; }
+		ping -c 2 -W 5 $GITLAB > /dev/null 2>&1 || { printf "ERROR: Could not reach ${GITLAB}. Check internet connection.\n"; exit 1; }
 	
 		cd $DIR
 	
@@ -339,16 +343,17 @@ EOF
 		# Download lastal, last-split
 		# Get index.html to get filename
 		wget -q --read-timeout 15 -t 3 "$LASTWEB" || { printf "ERROR: Having trouble reaching ${LASTWEB}.\n";
-			cd ..
+			cd ..;
 			rm -r tools;
 			exit 1; }
 	
-		FILE=`cat index.html | awk '{if(match($0,/last-[0-9\.]+\.zip/))print substr($0,RSTART,RLENGTH)}'`
-		rm index.html*
+		URL=$(cat tags | grep 'gl-button btn btn-sm btn-confirm' | grep -Eo '\/.*\.zip' | head -n1)
+		FILE=$(printf ${URL} | grep -Eo '[^/]*\.zip$')
+		rm tags
 		
 		# Get last*zip and extract
-		wget -q --read-timeout 15 -t 3 "${LASTWEB}/${FILE}" || { printf "ERROR: Having trouble reaching ${LASTWEB}.\n";
-			cd ..
+		wget -q --read-timeout 15 -t 3 "${GITLAB}${URL}" || { printf "ERROR: Having trouble reaching ${GITLAB}${URL}.\n";
+			cd ..;
 			rm -r tools;
 			exit 1; }
 			
@@ -394,11 +399,7 @@ EOF
 			cd ..
 		fi
 		
-		cp -av last/src/last-split bin > /dev/null
-		cp -av last/src/lastal bin > /dev/null
-		cp -av last/src/lastdb bin > /dev/null
-		cp -av last/scripts/maf-convert bin > /dev/null
-		cp -av last/scripts/last-train bin > /dev/null
+		cp -av last/bin/* bin > /dev/null
 		
 		rm -rf last*
 		
@@ -445,7 +446,7 @@ EOF
 		fi
 	done
 	
-	MANINSTALL=$(manpath | cut -d ":" -f1)
+	MANINSTALL=$(manpath -q | cut -d ":" -f1)
 	if [ -d "${MANINSTALL}/man1" ]; then
 		printf "INFO: Attempting to install man pages to ${MANINSTALL}/man1.\n"
 		printf "INFO: You need root privileges to continue.\n"
@@ -458,7 +459,7 @@ EOF
 		if [ $ANSWER = 0 ]; then
 			printf "WARNING: Man pages not installed. Help functions for metag and metag_setup are limited.\n"
 			printf "INFO: Man files ${PWD}/files/metag_setup.1.gz and ${PWD}/files/metag.1.gz should be moved to any man1 directory of\n"
-			printf "$(manpath| sed 's/:/ or /g')\n"
+			printf "$(manpath -q | sed 's/:/ or /g')\n"
 		else
 			printf "INFO: Executing sudo find ${PWD}/files/ -name metag*.1.gz -exec mv '{}' ${MANINSTALL}/man1 \;\n"
 			
@@ -482,7 +483,8 @@ EOF
 }
 
 # Defaults
-LASTWEB="last.cbrc.jp"
+GITLAB="www.gitlab.com"
+LASTWEB="${GITLAB}/mcfrith/last/-/tags"
 INDIR=$(pwd)
 ISREMOVE=0
 ISCONF=0
@@ -566,7 +568,7 @@ DEPENDENCIES
 
        If you want to install the LAST package and KronaTools manually, you can find them here:
 
-              http://last.cbrc.jp/
+              https://gitlab.com/mcfrith/last
 
               https://github.com/marbl/Krona/wiki/KronaTools
 
