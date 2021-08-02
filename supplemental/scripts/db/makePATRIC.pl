@@ -37,7 +37,7 @@
 # ftp://ftp.patricbrc.org/RELEASE_NOTES/ to the directory of this script.
 # 
 # Then run
-# awk -F '\t' '{if ($46 ~ /^Human|^Homo/) {print $1"\t"$46"\t"$53}}' genome_metadata > patricHuman.txt
+# awk -F '\t' '{if (tolower($46) ~ /^human|^homo/) {print $1"\tHomo sapiens\t"$53}}' genome_metadata > patricHuman.txt
 # To get only information about human hosts.
 #
 # This script will produce the patho.PATRIC.txt file which can be supplied as -pdbPath to MetaG.
