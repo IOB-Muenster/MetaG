@@ -67,7 +67,7 @@ while(<LIN>) {
 	my @splits = split("\t", $_);
 	my $id = $splits[0];
 	my $species = $splits[1];
-	my ($kingdom, $phylum, $class, $order, $family, $genus,) = @splits[3..6];
+	my ($kingdom, $phylum, $class, $order, $family, $genus,) = @splits[3..8];
 	
 	foreach my $rank ($kingdom, $phylum, $class, $order, $family, $genus, $species) {
 		$rank = "0" if (not $rank);
