@@ -37,11 +37,11 @@
 #
 # USAGE
 #
-#	makeNCBI.pl -input seqfile.fna [ -kitdata directory ] [--debug]
+#	makeRefSeq.pl -input seqfile.fna [ -kitdata directory ] [--debug]
 #
 #	OR
 #
-#	makeNCBI.pl -i seqfile.fna [ -k directory ] [-d]
+#	makeRefSeq.pl -i seqfile.fna [ -k directory ] [-d]
 #
 #	Choose and download the refseq database files (*fna.gz) from
 #	ftp://ftp.ncbi.nlm.nih.gov/refseq/TargetedLoci/ . You may concatenate multiple files of interest into
@@ -107,11 +107,11 @@ my $usage = <<'EOF';
 
  USAGE
 
-	makeNCBI.pl -input seqfile.fna [ -kitdata directory ] [--debug]
+	makeRefSeq.pl -input seqfile.fna [ -kitdata directory ] [--debug]
 
 	OR
 
-	makeNCBI.pl -i seqfile.fna [ -k directory ] [-d]
+	makeRefSeq.pl -i seqfile.fna [ -k directory ] [-d]
 
 	Choose and download the refseq database files (*fna.gz) from
 	ftp://ftp.ncbi.nlm.nih.gov/refseq/TargetedLoci/ . You may concatenate multiple files of interest into
@@ -129,7 +129,7 @@ my $usage = <<'EOF';
 
  DEPENDENCIES
 
- 	* NCBI Taxonomy Toolkit v0.7.2 (https://doi.org/10.1101/513523)
+ 	* NCBI Taxonomy Toolkit v0.8.0 (https://doi.org/10.1101/513523)
 		https://github.com/shenwei356/taxonkit
 		Must be located in the PATH!
 	* JSON::Tiny
@@ -253,43 +253,66 @@ while (@ids) {
 	my %queries = ('id' => join(",", @queries));
 	
 	my $ua = LWP::UserAgent->new(timeout => 40);
-	my $response = $ua->post($url, \%queries);
-
-	if (not $response->is_success) {
-		die "ERROR: API error with chunk $chunkC: " . $response->status_line . "\n"
-	}
-	else {
-		if (not defined $response->content or not $response->content) {
-			print "WARNING: Unexpected API response";
-		}
-				
-		$response = decode_json ($response->content);
-		
-		if (exists $response->{'error'}) {
-			die "API ERROR: " . $response->{'error'};
+	
+	# Try to query a chunk again, if there was any error.
+	# Sometimes NCBI API returns "random" error for valid ID.
+	# Retry at most 3 times.
+	my $retryC = 0;
+	my $maxRetry = 3;
+	my $isSuccess = 0;
+	while ($isSuccess == 0 and $retryC < $maxRetry) {
+		my $response = $ua->post($url, \%queries);
+	
+		if (not $response->is_success) {
+			print "ERROR: API error with chunk $chunkC: " . $response->status_line . "\n"
 		}
 		else {
-			if (defined $response->{'result'}->{'uids'}) {
-			
-				foreach my $uid (@{$response->{'result'}->{'uids'}}) {
-					my $taxid = 0;
-					
-					if (exists $response->{'result'}->{$uid}->{'taxid'}) {
-						$taxid = $response->{'result'}->{$uid}->{'taxid'};
-						my $seqidApi = $response->{'result'}->{$uid}->{'caption'};
-						my $seqid = $ids{$seqidApi};
-						$taxids{$seqid} = $taxid;
-						delete $ids{$seqidApi};
-					}
-					else {
-						die "ERROR unexpected API response. No taxid returned."
-					}
-				}
-			}
-			else {
+			if (not defined $response->content or not $response->content) {
 				print "WARNING: Unexpected API response\n";
 			}
+					
+			$response = decode_json ($response->content);
+			
+			if (exists $response->{'error'}) {
+				print "API ERROR: " . $response->{'error'} . "\n";
+			}
+			else {
+				if (defined $response->{'result'}->{'uids'}) {
+				
+					foreach my $uid (@{$response->{'result'}->{'uids'}}) {
+						my $taxid = 0;
+						
+						if (exists $response->{'result'}->{$uid}->{'taxid'}) {
+							$taxid = $response->{'result'}->{$uid}->{'taxid'};
+							my $seqidApi = $response->{'result'}->{$uid}->{'caption'};
+							my $seqid = $ids{$seqidApi};
+							$taxids{$seqid} = $taxid;
+							delete $ids{$seqidApi};
+							
+							# Flag to break out of the while loop
+							$isSuccess = 1;
+						}
+						else {
+							print "ERROR unexpected API response. No taxid returned.\n"
+						}
+					}
+				}
+				else {
+					print "WARNING: Unexpected API response\n";
+				}
+			}
 		}
+		if ($isSuccess == 0) {
+			$retryC++;
+			
+			if ($retryC < $maxRetry) {
+				print "INFO: Error in API response. Trying again ($retryC of $maxRetry).\n";
+				sleep(8);
+			}
+			else {
+				die "ERROR: No valid API response in retry limit\n";
+			}
+		} 
 	}
 	# Only 2 requests per second
 	select(undef, undef, undef, 0.5);
@@ -314,9 +337,8 @@ print "INFO: Getting lineage info from taxid\n";
 
 my $tmpTax = dirname($outTax) . "/tmp." . basename($outTax);
 
-# Use the taxid in the second column to write a temporary taxonomy
-# Then, the taxonomy is formatted to 8 ranks, missing ranks are "0"
-my $command = ("taxonkit lineage -i 2 $outTax --data-dir $taxkitData | taxonkit reformat -i 3 --data-dir $taxkitData --miss-rank-repl \"0\" -S -f \"{k}\t{p}\t{c}\t{o}\t{f}\t{g}\t{s}\t{t}\" > $tmpTax");
+# Use the taxid in the second column to write a temporary taxonomy with 8 ranks, missing ranks are "0"
+my $command = ("taxonkit reformat -I 2 --data-dir $taxkitData --miss-rank-repl \"0\" -S -f \"{k}\t{p}\t{c}\t{o}\t{f}\t{g}\t{s}\t{t}\" $outTax > $tmpTax");
 
 # For system, exit code 0 is an error.
 system($command) and die "ERROR: Taxonkit failed.";
@@ -335,7 +357,7 @@ while(<TMPTAX>) {
 	my $seqid = $splits[0];
 	
 	# Get the whole tab-delimited and reformated taxonomy
-	my @taxa = @splits[3..$#splits];
+	my @taxa = @splits[2..$#splits];
 	
 	# Reformatted taxonomy has 8 ranks. MetaG needs 10.
 	# Insert subclass and suborder as "0" = unknown
