@@ -15,6 +15,16 @@ The program was tested on Ubuntu 18.04.3 LTS, macOS 10.15.3 and FreeBSD 12.1.
 
 Free yourself from hardware restrictions: Use [MetaG online](http://www.bioinformatics.uni-muenster.de/tools/metag)!
 
+## Major updates
+### 04.08.2021 - Filter workflow
+We implemented a new workflow (--filter) which allows you to remove reads from a specific organism from the sample. Why do you
+need this? Let's have a look at two samples: An environmental sample and a patient sample. In the environmental sample from a pond
+you may find a lot of reads matching algae, but only few matching your taxon of interest. To make the analysis and display more
+straightforward, you may wish to exclude the algae reads first, before analyzing the remaining reads for your taxon of interest.
+In case of a virome analysis from a human patient sample, you may wish to exclude human reads first, to avoid any false positive
+assignments of human reads.
+Please see the help or man page for details.
+
 ## Directory and files
 ### metag_src
 Download this folder to install MetaG locally. See [README](../../blob/master/metag_src/install/README) in this directory

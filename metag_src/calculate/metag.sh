@@ -113,6 +113,13 @@ calcAlign () {
 }
 
 
+filterReads () {
+	FILTERSCR=$(echo ${GETMETA} | sed 's/getMeta\.pl/filterReads\.pl/')
+	FILTERED=$(echo $Q | sed -e 's/[^/]*$/calc\.query\.filtered/')
+	"$FILTERSCR" -alignment "$MAF" -sequences "$Q" --unaligned > "$FILTERED"
+}
+
+
 getTaxa () {
 	
 	# Verbose output?
@@ -206,17 +213,18 @@ printArgs() {
 	if [ "$ISFQ" != 0 ]; then INFO="${INFO}FASTQ input:\t\t\tTrue\n\t"; fi
 	if [ "$ISREC" != 0 ]; then ALIGNINFO="${ALIGNINFO}Recursive:\t\t\tTrue\n\t"; fi
 	if [ ! -z "$LDB" ]; then ALIGNINFO="${ALIGNINFO}LAST database:\t\t\t${LDB}\n\t"; fi
-	if [ ! -z "$LTAX" ]; then INFO="${INFO}Database taxonomy:\t\t${LTAX}\n\t"; fi
+	if [ ! -z "$LTAX" ]; then ASSIGNINFO="${ASSIGNINFO}Database taxonomy:\t\t${LTAX}\n\t"; fi
 	if [ ! -z "$LMAT" ]; then ALIGNINFO="${ALIGNINFO}LAST substitution matrix:\t${LMAT}\n\t"; fi
 	if [ ! -z "$LPARAM" ]; then ALIGNINFO="${ALIGNINFO}LAST parameters:\t\t${LPARAM}\n\t"; fi
 	if [ ! -z "$LSPLIT" ]; then ALIGNINFO="${ALIGNINFO}LAST-SPLIT -m:\t\t\t${LSPLIT}\n\t"; fi
-	if [ ! -z "$PDBPATH" ]; then INFO="${INFO}Pathogen taxonomy:\t\t${PDBPATH}\n\t"; fi
-	if [ ! -z "$E" ]; then INFO="${INFO}E-value cutoff:\t\t\t${E}\n\t"; fi
-	if [ ! -z "$AC" ]; then INFO="${INFO}Alignment score cutoff:\t\t${AC}\n\t"; fi
-	if [ ! -z "$CC" ]; then INFO="${INFO}Confidence cutoff:\t\t${CC}\n\t"; fi
-	if [ ! -z "$M" ]; then INFO="${INFO}Method for average confidence:\t${M}\n\t"; fi
-	if [ "$ISVIR" != 0 ]; then INFO="${INFO}Viral database:\t\t\tTrue\n\t"; fi
-	if [ "$ISVERBOSE" != 0 ]; then INFO="${INFO}Verbose:\t\t\tTrue\n\t"; fi	
+	if [ ! -z "$PDBPATH" ]; then ASSIGNINFO="${ASSIGNINFO}Pathogen taxonomy:\t\t${PDBPATH}\n\t"; fi
+	if [ ! -z "$E" ]; then ASSIGNINFO="${ASSIGNINFO}E-value cutoff:\t\t\t${E}\n\t"; fi
+	if [ ! -z "$AC" ]; then ASSIGNINFO="${ASSIGNINFO}Alignment score cutoff:\t\t${AC}\n\t"; fi
+	if [ ! -z "$CC" ]; then ASSIGNINFO="${ASSIGNINFO}Confidence cutoff:\t\t${CC}\n\t"; fi
+	if [ ! -z "$M" ]; then ASSIGNINFO="${ASSIGNINFO}Method for average confidence:\t${M}\n\t"; fi
+	if [ "$ISVIR" != 0 ]; then ASSIGNINFO="${ASSIGNINFO}Viral database:\t\t\tTrue\n\t"; fi
+	if [ "$ISVERBOSE" != 0 ]; then INFO="${INFO}Verbose:\t\t\tTrue\n\t"; fi
+	if [ "$ISFILTER" != 0 ]; then INFO="${INFO}Filter reads:\t\t\tTrue\n\t"; fi
 }
 
 
@@ -332,6 +340,9 @@ Metagenomic analysis started with parameters:\n\n\t"
 			--verbose)	ISVERBOSE=1
 					countSwitch "$ISVERBOSE" "1"
 					;;
+			--filter)	ISFILTER=1
+					countSwitch "$ISFILTER" "1"
+					;;
 			--config) shift
 					;;
 			-h)		man metag 2>/dev/null || printf "${HELPMSG}" | less
@@ -348,7 +359,7 @@ Metagenomic analysis started with parameters:\n\n\t"
 	done
 	
 	
-	if [ $ARGCOUNT -lt 14 -a  $ARGCOUNT -gt 28 ]; then
+	if [ $ARGCOUNT -lt 5 -a  $ARGCOUNT -gt 28 ]; then
 		printf "\nERROR: Unexpected number of arguments. Type -h for help\n\n"
 		exit 1
 	fi
@@ -371,6 +382,7 @@ ISVIR=0
 ISVERBOSE=0
 ISFQ=0
 ISREC=0
+ISFILTER=0
 CONFIG=""
 ENV=""
 CONFREADER="${GETMETA}"
@@ -386,6 +398,9 @@ INFO=""
 # alignment workflow, but not --no_align
 ALIGNINFO=""
 
+# Same as INFO, but lists parameters which only affect
+# metagenomic assignment, but not --filter
+ALIGNINFO=""
 
 HELPMSG='
 MetaG(1)                                                                                        Documentation                                                                                        MetaG(1)
@@ -398,13 +413,22 @@ SYNOPSIS
 
               metag.sh -h
 
-       Start from reads
+       Filter reads
+       		  
+       		  metag.sh --filter  -q  query reads -ldb database -lmat subst. matrix | -lparam alignment parameters [-lsplit filtering with LAST-SPLIT] [-cores number of cores for alignment] [--verbose]
+       		  [--fastq] [--config  config  file] [--recursive]
+       		  
+       Filter reads from pre-calculated alignment
+       
+       		  metag.sh --filter -q  query reads --no_align MAF file [--verbose] [--fastq] [--config  config file]
+       
+       Metagenomic analysis from reads
 
-              metag.sh  -q  query reads -ldb database -ltax database taxonomy [-lmat subst. matrix] [-lparam alignment parameters] [-lsplit filtering with LAST-SPLIT] [-cores number of cores for alignment]
+              metag.sh  -q  query reads -ldb database -ltax database taxonomy -lmat subst. matrix | -lparam alignment parameters [-lsplit filtering with LAST-SPLIT] [-cores number of cores for alignment]
               -pdbPath pathogen taxonomy [-vir] -e e-value cutoff -ac alignment score cutoff -cc confidence cutoff -m Method to  calc.  average  confidence  [--verbose]  [--fastq]  [--config  config  file]
               [--recursive]
 
-       Run with pre-calculated alignment
+       Metagenomic analysis with pre-calculated alignment
 
               metag.sh  -q  query  reads  -ltax  database taxonomy -pdbPath pathogen taxonomy [-vir] -e e-value cutoff -ac alignment score cutoff -cc confidence cutoff -m Method to calc. average confidence
               --no_align MAF file [--verbose] [--fastq] [--config  config file]
@@ -412,10 +436,12 @@ SYNOPSIS
 DESCRIPTION
        MetaG processes input sequencing reads and assigns a taxonomy. This is supplemented with pathogen predictions and, where applicable, antibiotic resistance information.
 
-       The program can be run on fasta/fastq reads from WGS and targeted sequencing and was tested for bacteria, archaea, fungi and viruses. Calculations may start from scratch by alignment of query  reads
-       to a database or from a pre-calculated alignment in MAF format.
+       The program can be run on fasta/fastq reads from WGS and targeted sequencing and was tested for bacteria, archaea, fungi and viruses. Calculations may start from scratch by alignment of query reads
+	   to a database or from a pre-calculated alignment in MAF format. Optionally, it is possible to filter reads first, by using the --filter workflow. This can be used to improve the analysis for species
+	   which occur at low read counts, by excluding taxa with very high read counts. It can also be used to exclude contamination which may lead to false positive classifications (e.g. human contamination in
+	   a viral analysis). After filtering, the metagenomic analysis can be performed on the retained reads.
 
-       MetaG filters the alignments for each read by a given e-value and alignment score cutoff. If one read can be assigned to different database taxonomies, MetaG assigns the most common taxon.  To avoid
+       MetaG filters the alignments for each read by a given e-value and alignment score cutoff. If one read can be assigned to different database taxonomies, MetaG assigns the most common taxon. To avoid
        ambiguous assignments, this is also influenced by the quality of the matches and the user given confidence cutoff.
 
        MetaG needs multiple environment variables. These can also be specified in the config file. See also ENVIRONMENT section.
@@ -432,10 +458,10 @@ OPTIONS
 
        -ltax  Database taxonomy [FILE].
 
-       -lmat  OPT: LAST substitution matrix. Conflicting with -lparam [FILE].
+       -lmat  LAST substitution matrix. Conflicting with -lparam [FILE].
 
        -lparam
-              OPT: LAST alignment parameters, Conflicting with -lmat [STRING].
+              LAST alignment parameters, Conflicting with -lmat [STRING].
 
        -lsplit
               OPT: Filters alignments with LAST-SPLIT.  Translates to last-split -m [FLOAT].
@@ -467,6 +493,9 @@ OPTIONS
 
        --recursive
               Processes multiple query files in the directory defined by -q.  Illegal, if --no_align.
+              
+       --filter
+       		 Indicate the workflow to remove unwanted reads.
 
 EXAMPLES
        All parameters can also be defined in a so-called config file, which may be supplied to MetaG by using the --config parameter. Additional parameters can be specified on the command line.  In case of
@@ -510,6 +539,9 @@ ENVIRONMENT
 
 FILES
        Output files will be generated in the directory of the query file. The files always start with the calc. prefix with the exception of temp.matrix.txt.
+       
+   	   calc.query.filtered
+   	   		  Contains the reads that were retained in the --filter workflow. Only present, if --filter was used.
 
        calc.lastalign.maf
               MAF file of LAST alignment. Not present, if --no-align.
@@ -684,48 +716,78 @@ ALIGNINFO="${ALIGNINFO}Cores for LAST:\t\t\t${CORES}\n\n"
 # User can give fewer arguments, if --no_align is set
 if [ $NOALIGN -eq 1 ]; then
 	
-	# Check if relevant parameters for workflow were set and are not empty
-	checkEssential "$Q" "$LTAX" "$PDBPATH" "$E" "$AC" "$CC" "$M"
-	
-	# ...Then by checking arguments that should NOT have been set
-	# These won't have any effect using --no_align.
-	# Just issue a warning.
-	if [ ! -z $LDB ] || [ ! -z $LMAT ] || [ ! -z $LPARAM ] || [ ! -z $LSPLIT ] || [ $CORES != 1 ] || [ $ISREC != 0 ]; then
-		INFO="${INFO}\nFollowing parameters have no effect with --no_align and are ignored:\n\n\t${ALIGNINFO}"
-	fi	
-	
-	# Check environment variables for GETMETA and KRONA
-	if [ "$GETMETA" = "" -o "$KRONA" = "" ]; then
-		printf "\nERROR: Unset essential environment variable. Use -h for help\n\n"
-		exit 1
+	# Perform metagenomic assignment
+	if [ $ISFILTER -eq 0 ]; then
+		# Check if relevant parameters for workflow were set and are not empty
+		checkEssential "$Q" "$LTAX" "$PDBPATH" "$E" "$AC" "$CC" "$M"
+		
+		INFO="${INFO}${ASSIGNINFO}"
+		
+		# ...Then by checking arguments that should NOT have been set
+		# These won't have any effect using --no_align.
+		# Just issue a warning.
+		if [ ! -z $LDB ] || [ ! -z $LMAT ] || [ ! -z $LPARAM ] || [ ! -z $LSPLIT ] || [ $CORES != 1 ] || [ $ISREC != 0 ]; then
+			INFO="${INFO}\nFollowing parameters have no effect with --no_align and are ignored:\n\n\t${ALIGNINFO}"
+		fi	
+		
+		# Check environment variables for GETMETA and KRONA
+		if [ "$GETMETA" = "" -o "$KRONA" = "" ]; then
+			printf "\nERROR: Unset essential environment variable. Use -h for help\n\n"
+			exit 1
+		else
+			# Set path to major Krona script
+			KRONA="${KRONA}/ImportText.pl"
+			
+			# Check if scripts exist
+			if [ ! -e "$GETMETA" ]; then
+				printf "\nERROR: Assignment script not found at ${GETMETA}. Check environmental variable or use -h for help.\n"
+				exit 1
+			elif [ ! -e "$KRONA" ]; then
+				printf "\nERROR: Krona main script not found at ${KRONA}. Check environmental variable or use -h for help.\n"
+				exit 1
+			fi
+		fi
+	# Filter reads
 	else
-		# Set path to major Krona script
-		KRONA="${KRONA}/ImportText.pl"
+		# Check if relevant parameters for workflow were set and are not empty
+		checkEssential "$Q"
 		
 		# Check if scripts exist
 		if [ ! -e "$GETMETA" ]; then
 			printf "\nERROR: Assignment script not found at ${GETMETA}. Check environmental variable or use -h for help.\n"
 			exit 1
-		elif [ ! -e "$KRONA" ]; then
-			printf "\nERROR: Krona main script not found at ${KRONA}. Check environmental variable or use -h for help.\n"
-			exit 1
+		fi
+		
+		# ...Then by checking arguments that should NOT have been set
+		if [ ! -z $LDB ] || [ ! -z $LMAT ] || [ ! -z $LPARAM ] || [ ! -z $LSPLIT ] || [ $CORES != 1 ] || [ $ISREC != 0 ] || [ ! -z $LTAX ] || 
+		[ ! -z $PDBPATH ] || [ ! -z $E ] || [ ! -z $AC ] || [ ! -z $CC ] || [ ! -z $M ]; then
+			INFO="${INFO}\nFollowing parameters have no effect with --filter and are ignored:\n\n\t${ALIGNINFO}\n\t${ASSIGNINFO}\n"
 		fi
 	fi
 
 # Don't use pre-calculated alignment
 elif [ $NOALIGN -eq 0 ]; then
 	
-	# Check if relevant parameters for workflow were set and are not empty
-	checkEssential "$Q" "$LDB" "$LTAX" "$PDBPATH" "$E" "$AC" "$CC" "$M"
 	
+	# Perform metagenomic assignment
+	if [ $ISFILTER -eq 0 ]; then
+		# Check if relevant parameters for workflow were set and are not empty
+		checkEssential "$Q" "$LDB" "$LTAX" "$PDBPATH" "$E" "$AC" "$CC" "$M"
+		INFO="${INFO}${ASSIGNINFO}"
+	else
+		# Check if relevant parameters for workflow were set and are not empty
+		checkEssential "$Q" "$LDB"
+		
+		# ...Then by checking arguments that should NOT have been set
+		if [ ! -z $LTAX ] || [ ! -z $PDBPATH ] || [ ! -z $E ] || [ ! -z $AC ] || [ ! -z $CC ] || [ ! -z $M ]; then
+			INFO="${INFO}\nFollowing parameters have no effect with --filter and are ignored:\n\n\t${ASSIGNINFO}\n"
+		fi
+	fi	
 	
 	# Check if environment variables are set
-	if [ "$LASTAL" = "" -o "$LASTSPLIT" = "" -o "$GETMETA" = "" -o "$KRONA" = "" ]; then
+	if [ "$LASTAL" = "" -o "$LASTSPLIT" = "" -o "$GETMETA" = "" ]; then
 		printf "\nERROR: Unset essential environment variable(s). Use -h for help\n\n"
 		exit 1
-	else
-		# Set path to major Krona script
-		KRONA="${KRONA}/ImportText.pl"
 	fi
 	
 	# Check if programs exist
@@ -742,9 +804,21 @@ elif [ $NOALIGN -eq 0 ]; then
 	elif [ ! -e "$GETMETA" ]; then
 		printf "\nERROR: Assignment script not found at ${GETMETA}. Check environmental variable or use -h for help.\n\n"
 		exit 1
-	elif [ ! -e "$KRONA" ]; then
-		printf "\nERROR: Krona main script not found at ${KRONA}. Check environmental variable or use -h for help.\n\n"
-		exit 1			
+	fi
+
+	# I only need Krona outside filter workflow
+	if [ $ISFILTER -eq 0 ]; then
+		if [ "$KRONA" = "" ]; then
+			printf "\nERROR: Unset essential environment variable(s). Use -h for help\n\n"
+		else
+			# Set path to major Krona script
+			KRONA="${KRONA}/ImportText.pl"
+		
+			if [ ! -e "$KRONA" ]; then
+				printf "\nERROR: Krona main script not found at ${KRONA}. Check environmental variable or use -h for help.\n\n"
+				exit 1
+			fi
+		fi		
 	fi	
 	
 	# Check if LASTAL and LAST-SPLIT version is 963 or later
@@ -811,16 +885,25 @@ if [ $NOALIGN -eq 1 ]; then
 	fi
 	
 	
-	# Print environment variables
-	printf "${INFO}Accessing helpers from:\n\n\tGETMETA: ${GETMETA}\n\tKRONA: ${KRONA}\n\n"
-	
-	# Get taxa
-	printf "\n[1/1] Starting taxonomic assignment on given alignment.\n\n"
-	getTaxa
-	
-	# Pack unmatched reads for user
-	packUnmatched
+	# Perform metagenomic assignment
+	if [ $ISFILTER -eq 0 ]; then
+		# Print environment variables
+		printf "${INFO}Accessing helpers from:\n\n\tGETMETA: ${GETMETA}\n\tKRONA: ${KRONA}\n\n"
 		
+		# Get taxa
+		printf "\n[1/1] Starting taxonomic assignment on given alignment.\n\n"
+		getTaxa
+		
+		# Pack unmatched reads for user
+		packUnmatched
+	else
+		# Print environment variables
+		printf "${INFO}Accessing helpers from:\n\n\tGETMETA: ${GETMETA}\n\n"
+		
+		printf "[1/1] Filtering reads.\n\n"
+		filterReads
+	fi
+	
 	# Runtime
 	ENDTIME=$(date +"%s")
 	CALCTIME=$(($ENDTIME-$STARTTIME))
@@ -840,8 +923,12 @@ if [ "$LSPLIT" = "" ]; then
 fi
 
 
-# Print environment variables
-printf "${INFO}${ALIGNINFO}Accessing helpers from:\n\n\tLASTAL: ${LASTAL}\n\tLASTSPLIT: ${LASTSPLIT}\n\tGETMETA: ${GETMETA}\n\tKRONA: ${KRONA}\n\n"
+# Print environment variables. I don't need KRONA in filter workflow.
+if [ $ISFILTER -eq 0 ]; then
+	printf "${INFO}${ALIGNINFO}Accessing helpers from:\n\n\tLASTAL: ${LASTAL}\n\tLASTSPLIT: ${LASTSPLIT}\n\tGETMETA: ${GETMETA}\n\tKRONA: ${KRONA}\n\n"
+else
+	printf "${INFO}${ALIGNINFO}Accessing helpers from:\n\n\tLASTAL: ${LASTAL}\n\tLASTSPLIT: ${LASTSPLIT}\n\tGETMETA: ${GETMETA}\n\n"
+fi
 
 # User want recursive processing of all query files in a directory
 if [ $ISREC -eq 1 ]; then
@@ -890,13 +977,18 @@ if [ $ISREC -eq 1 ]; then
 		
 		# Calculate alignment
 		calcAlign
-			
-		# Get taxa
-		printf "[2/2] Starting taxonomic assignment.\n\n"
-		getTaxa
 		
-		# Pack unmatched reads for user
-		packUnmatched || exit 1
+		# Perform metagenomic assignment
+		if [ $ISFILTER -eq 0 ]; then	
+			printf "[2/2] Starting taxonomic assignment.\n\n"
+			getTaxa
+		
+			# Pack unmatched reads for user
+			packUnmatched || exit 1
+		else
+			printf "[2/2] Filtering reads.\n\n"
+			filterReads
+		fi
 		
 		# Move all created files to respective output directory
 		mv ${DIR}/calc.* $OUTDIR 
@@ -927,12 +1019,17 @@ else
 	# Calculate alignment
 	calcAlign	
 		
-	# Get taxa
-	printf "[2/2] Starting taxonomic assignment.\n\n"
-	getTaxa
-	
-	# Pack unmatched reads for user
-	packUnmatched
+	# Perform metagenomic assignment
+	if [ $ISFILTER -eq 0 ]; then
+		printf "[2/2] Starting taxonomic assignment.\n\n"
+		getTaxa
+		
+		# Pack unmatched reads for user
+		packUnmatched
+	else
+		printf "[2/2] Filtering reads.\n\n"
+		filterReads
+	fi
 fi
 
 
