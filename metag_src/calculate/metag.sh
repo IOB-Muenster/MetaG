@@ -81,9 +81,15 @@ checkEssential() {
 }
 
 calcAlign () {
-	
 	# MAF output of LASTAL | LAST-SPLIT is saved into the same directory as query
-	MAF=$(echo $Q | sed -e 's/[^/]*$/calc.lastalign.maf/')
+	# Name alignment produced by --filter and alignment produced by taxonomic assignment
+	# differently.
+	MAF=""
+	if [ $ISFILTER -eq 0 ]; then
+		MAF=$(echo $Q | sed -e 's/[^/]*$/calc.lastalign.maf/')
+	else
+		MAF=$(echo $Q | sed -e 's/[^/]*$/calc.filter.maf/')
+	fi
 	
 	if [ -e "$MAF" ]; then
 		printf "\nERROR: Alignment file ${MAF} already exists. Won't override it.\nDo you want to use this file for the analysis, instead? Set [--no_align].\n\n"
