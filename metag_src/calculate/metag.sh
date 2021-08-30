@@ -636,7 +636,7 @@ Felix Manske                                                                    
 
 # User has a config file with additional parameters
 # Join command line parameters with those from config file
-CONFIG=$(echo "$@" | grep -Eo "\-\-config [^- ]*" | cut -d " " -f2)
+CONFIG=$(echo "$@" | grep -Eo "\-\-config [^ ]*" | cut -d " " -f2)
 
 
 # I need GETMETA's value to find readConfig.pl script
