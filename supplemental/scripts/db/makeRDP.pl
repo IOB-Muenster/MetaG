@@ -31,21 +31,41 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-#========================================================================================================#
-# Load a (marker gene) database in fasta format and restructure it to a MetaG-complient format containing
-# only the taxonomy (-ltax in MetaG).
+#======================================================================#
+# DESCRIPTION
+# 
+# 	Using a RDP FASTA file, this script will create a taxonomy
+#	and a FASTA file in MetaG format. It aims to improve the
+#	taxonomic resulotion of RDP, by setting uninformative taxon
+#	names to a common expression (e.g.: uncultured * --> uncultured).
+#	Besides, species and strain names are separated.
 #
-# Modify the variables in the "MODIFY HERE" section according to your needs:
-# $in: Path to the database fasta file (default: db.fa in script directory).
-# $out: Path were the output should be stored (default: db.fa.metag in script directory).
+# USAGE
 #
-# Expects the database to contain only the following ranks:
-# "domain", "phylum", "class", "subclass", "order", "suborder", "family", "genus", "species", "strain"
+#	Replace all ";" in FASTA headers of RDP file with ",".
+#	The input FASTA file must be called db.fa. Then run this
+#	script in the directory of db.fa:
+#		./makeRDP.pl
+# 
+# OUTPUT
 #
-# PREPARATIONS:
-# RDP: Replace all ";" in fasta headers by ",".
-# MTX: 
-#--------------------------------------------------------------------------------------------------------#
+#	The following output files will be created in the current
+#	working directory:
+#
+#	tax.rdp.txt		Taxonomy file in MetaG format
+#	rdp.fa			Fasta file in MetaG format
+#
+# IMPORTANT
+# 
+#	Expects the database to contain only the following ranks:
+# 	"domain", "phylum", "class", "subclass", "order", "suborder",
+#	"family", "genus", "species", "strain"
+#
+# LIMITATIONS
+#
+#	Due to the size of RDP we expect to find special cases that were
+#	beyond the scope of this script. These should be fixed manually.
+#----------------------------------------------------------------------#
 
 use Cwd;
 use strict;
@@ -56,19 +76,24 @@ my $cwd = getcwd;
 
 #================= MODIFY HERE ================#
 my $in = "$cwd/db.fa";
-my $out = "$in.metag";
+my $outTax = "$cwd/tax.rdp.txt";
+my $outFa = "$cwd/rdp.fa";
 #----------------------------------------------#
 
 my %dbHash =();
 
 
-print "Loading and analyzing. This will take a while...\n";
+print "INFO: Loading and analyzing. This will take a while...\n";
 
-open(DB, "<", $in) or die "Couldn't open db file $in, $!";
+open(FA, ">", $outFa) or die "ERROR: Couldn't open output fasta file $outFa, $!";
+open(DB, "<", $in) or die "ERROR: Couldn't open db file $in, $!";
 while(<DB>) {
 	
 	# Get fasta headers...
 	if ($_ =~m"^\>") {
+		# Write to new fasta file
+		print FA $_;
+		
 		my @line_data = split ' ', $_;
 		my $encode = $line_data[0];
 		
@@ -97,13 +122,17 @@ while(<DB>) {
 				for (my $index = 0; $index < @lineages; $index += 2) {
 					
 					# Loose non-informative lineage data and skip rank
-					if ($lineages[$index] =~ m"incertae_sedis") {##########
+					if ($lineages[$index] =~ m"incertae_sedis") {
 						$index+=2
 					}
 					elsif ($lineages[$index] =~ m"^unclassified_") {
 						$index+=2
 					} 
 					else {
+						# Some entries finish with a taxon that is not assigned to
+						# any rank. --> Skip.
+						last if (not $lineages[$index+1]);
+						
 						if (exists $dbHash{$encode}) {
 							$dbHash{$encode}{$lineages[$index+1]} = $lineages[$index]
 						}
@@ -182,7 +211,7 @@ while(<DB>) {
 										if ($line_data[$i] =~ m"^[\s,]?[A-Z][a-z]" or $line_data[$i] =~ m"^[\s,]?bact" or $line_data[$i] =~ m"^[\s,]?orga") {
 											
 											# It's a strain!
-											last if ($line_data[$i] =~ m"[^A-Za-z,]"); ### prior A-za-z; corrected 22.5.19
+											last if ($line_data[$i] =~ m"[^A-Za-z,]");
 											$i += 1
 										}
 										# Check one condition per count. Remove sp. or spec.
@@ -249,17 +278,22 @@ while(<DB>) {
 		}
 		
 	}
+	else {
+		# Print to new fasta file
+		# Upper case to avoid issues with repeat masking
+		print FA uc($_);
+	}
 	
 }
 close (DB);
+close (FA);
 
-
-print "Writing...\n";
+print "INFO: Writing taxonomy\n";
 
 my @encList = keys(%dbHash);
 
 # Write new db file
-open(OUTFILE, ">", $out);
+open(TAX, ">", $outTax) or die "ERROR: Couldn't open output taxonomy file $outTax, $!";
 
 foreach my $enc (@encList) {
 	my $printstr = "";
@@ -274,7 +308,9 @@ foreach my $enc (@encList) {
 	}
 	
 	$printstr = $printstr."\n";
-	print OUTFILE $printstr;
+	print TAX $printstr;
 }
 
-close (OUTFILE);
+close (TAX);
+
+print "\nDONE\n";
