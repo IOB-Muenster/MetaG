@@ -483,7 +483,7 @@ EOF
 }
 
 # Defaults
-GITLAB="www.gitlab.com"
+GITLAB="gitlab.com"
 LASTWEB="${GITLAB}/mcfrith/last/-/tags"
 INDIR=$(pwd)
 ISREMOVE=0
