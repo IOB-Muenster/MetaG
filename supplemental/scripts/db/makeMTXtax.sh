@@ -71,4 +71,10 @@ perl -ne '$_ =~ s/;$/;0/; print $_' |\
 # Replace species entries with genus sp. by 0
 perl -ne '$_ =~ s/([A-Za-z]+)\s+(sp.);/0;/; print $_' |\
 
-perl -ne '$_=~ s/\t/;/; print $_' > "$DIR/tax.MTX.txt"
+perl -ne '$_=~ s/\t/;/; print $_' |\
+
+# In bacteria, the species name is sometimes the host name. Set the species name to "0" (unknown) and use the host name as the strain name. 
+perl -ne 'chomp($_); my @splits = split(";", $_); my $genus = $splits[-3]; my $spec = $splits[-2]; my $strain = $splits[$#splits]; my $id = $splits[0]; 
+if ($spec !~ m/^$genus/ and $id =~ m/\.B$/ and $strain =~ m/\([a-z ]{2,}\)$/) {@splits[-2] = 0; @splits[$#splits] = $spec . " " . $strain} print join(";", @splits), "\n"' |\
+
+perl -pne '' > $DIR/tax.MTX.txt
