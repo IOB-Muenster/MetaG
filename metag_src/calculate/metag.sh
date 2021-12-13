@@ -666,11 +666,11 @@ fi
 if [ "$CONFIG" ]; then
 	
 	CONFIGPARAMS=$($CONFREADER "${CONFIG}")
-	ENV=$(echo $CONFIGPARAMS | cut -d '#' -f2)
-	MATRIX=$(echo $CONFIGPARAMS | cut -d '#' -f3)
-	MATRIX=$(echo "${MATRIX}" | sed -e 's/_$//' | sed -e 's/_/\\n/g')
+	ENV=$(printf -- "${CONFIGPARAMS}" | cut -d '#' -f2)
+	MATRIX=$(printf -- "${CONFIGPARAMS}" | cut -d '#' -f3)
+	MATRIX=$(printf -- "${MATRIX}" | sed -e 's/_$//' | sed -e 's/_/\\n/g')
 	
-	CONFIGPARAMS=$(echo $CONFIGPARAMS | cut -d '#' -f1)
+	CONFIGPARAMS=$(printf -- "${CONFIGPARAMS}" | cut -d '#' -f1)
 	
 	
 	# Clear $@, take params from config file and append old values of $@.
