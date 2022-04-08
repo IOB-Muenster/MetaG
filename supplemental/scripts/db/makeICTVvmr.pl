@@ -66,10 +66,6 @@
 #		genbankID1;host
 #		genbankID2;host
 #		...
-#
-#	A PATRIC host file called patho.PATRIC.txt in the directory of the genome_lineage file.
-#	This can be used as -pdbPath for MetaG. The file has the following format:
-#	PATRICgenomeID;lineage;#host;#resistance .
 #	
 # LIMITATIONS
 #	
@@ -138,10 +134,6 @@ my $usage = <<'EOF';
 		genbankID1;host
 		genbankID2;host
 		...
-
-	A PATRIC host file called patho.PATRIC.txt in the directory of the genome_lineage file.
-	This can be used as -pdbPath for MetaG. The file has the following format:
-	PATRICgenomeID;lineage;#host;#resistance .
 	
 LIMITATIONS
 	
