@@ -31,33 +31,98 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-#=====================================================================================================#
-# This script builds a PATRIC database in MetaG format.
-# First you need to download genome_lineage and genome_metadata from
-# ftp://ftp.patricbrc.org/RELEASE_NOTES/ to the directory of this script.
+#=======================================================================================================#
+# Build a MetaG compatible database from PATRIC
+#-------------------------------------------------------------------------------------------------------#
+#
+# USAGE
 # 
-# Then run
-# awk -F '\t' '{if (tolower($46) ~ /^human|^homo/) {print $1"\tHomo sapiens\t"$53}}' genome_metadata > patricHuman.txt
-# To get only information about human hosts.
+# 	Download the genome_lineage and genome_metadata from ftp://ftp.patricbrc.org/RELEASE_NOTES/ .
+#	Limit the genome_metadata to human hosts using
+#	
+#	awk -F '\t' '{if (tolower($46) ~ /^human|^homo/) {print $1"\tHomo sapiens\t"$53}}' \
+#		genome_metadata > patricHuman.txt
+#	
+#	Then run makePATRIC.pl on the genome_lineage file and the freshly created patricHuman.txt file.	
+#		
+#	makePATRIC.pl -metadata patricHuman.txt -lineage genome_lineage
 #
-# This script will produce the patho.PATRIC.txt file which can be supplied as -pdbPath to MetaG.
-# The file has the following format:
+#	OR
 #
-# PATRICgenomeID;lineage;#host;#resistance
-#------------------------------------------------------------------------------------------------------#
+#	makePATRIC.pl -m patricHuman.txt -l genome_lineage
+#
+# OUTPUT
+#
+#	A PATRIC host file called patho.PATRIC.txt in the directory of the genome_lineage file.
+#	This can be used as -pdbPath for MetaG. The file has the following format:
+#	PATRICgenomeID;lineage;#host;#resistance .
+#
+#=========================================================================================================#
 
 
 use strict;
 use warnings;
-use Data::Dumper;
 use File::Basename;
+use Getopt::Long;
 
-my $dir = dirname(__FILE__);
+
+#-----------------------------------------------------------------------------------------------#
+# Parse and check arguments
+#-----------------------------------------------------------------------------------------------#
+my $argC = @ARGV;
+
+my $metaF = "";
+my $lineageF = "";
+my $help = 0;
+
+my $usage = <<'EOF';
+#=======================================================================================================#
+# Build a MetaG compatible database from PATRIC
+#-------------------------------------------------------------------------------------------------------#
+
+ USAGE
+ 
+ 	Download the genome_lineage and genome_metadata from ftp://ftp.patricbrc.org/RELEASE_NOTES/ .
+	Limit the genome_metadata to human hosts using
+	
+	awk -F '\t' '{if (tolower($46) ~ /^human|^homo/) {print $1"\tHomo sapiens\t"$53}}' \
+		genome_metadata > patricHuman.txt
+	
+	Then run makePATRIC.pl on the genome_lineage file and the freshly created patricHuman.txt file.	
+		
+	makePATRIC.pl -metadata patricHuman.txt -lineage genome_lineage
+
+	OR
+
+	makePATRIC.pl -m patricHuman.txt -l genome_lineage
+
+ OUTPUT
+
+	A PATRIC host file called patho.PATRIC.txt in the directory of the genome_lineage file.
+	This can be used as -pdbPath for MetaG. The file has the following format:
+	PATRICgenomeID;lineage;#host;#resistance .
+
+#=========================================================================================================#
+EOF
+;
+
+GetOptions ("metadata:s"   => \$metaF,
+            "lineage:s" => \$lineageF,
+           	'help|?' => \$help) or die $usage;
+           	
+if ($help > 0 or not $metaF or not $lineageF) {
+	print $usage;
+	exit 0;
+}
+
+my $outP = dirname($lineageF);
 
 
-# PATRICS own taxonomy
+#-----------------------------------------------------------------------------------------------#
+# Parse PATRIC taxonomy
+#-----------------------------------------------------------------------------------------------#
 my %lins = ();
-open(LIN, "<", "$dir/genome_lineage") or die "Can't open PATRIC lineage";
+open(LIN, "<", "$lineageF") or die "ERROR: Can't open PATRIC lineage";
 while(<LIN>) {
 	
 	# Loose header
@@ -125,14 +190,14 @@ while(<LIN>) {
 }
 
 
-open(OUT, ">", "$dir/patho.PATRIC.txt") or die "Can't open OUTFILE";
+open(OUT, ">", "$outP/patho.PATRIC.txt") or die "ERROR: Can't open OUTFILE";
 print OUT "#PATRICgenomeID;lineage;#host;#resistance";
 
 
-# Get PATRIC metadata and connect with taxonomy. Metadata was processed previously with
-# awk -F '\t' '{if ($46 ~ /^Human|^Homo/) {print $1"\t"$46"\t"$53}}' genome_metadata > patricHuman.txt
-# to get host name and resistances for human hosts, only.
-open(META, "<", "$dir/patricHuman.txt") or die "Can't open PATRIC metadata";
+#-----------------------------------------------------------------------------------------------#
+# Parse PATRIC metadata and connect it to taxonomy
+#-----------------------------------------------------------------------------------------------#
+open(META, "<", "$metaF") or die "ERROR: Can't open PATRIC metadata";
 while(<META>) {
 	
 	next if ($_ =~ m/^#/);
@@ -142,7 +207,7 @@ while(<META>) {
 	my $id = $splits[0];
 	my $host = $splits[1];
 	
-	# Some people can't spell Homo sapiens :)
+	# Correct spelling errors
 	$host = "Human" if ($host =~ m/^Human/ or $host =~ m/^Homo/);
 	$host =~ s/;/,/g;
 	
@@ -156,7 +221,7 @@ while(<META>) {
 		$lin = $lins{$id};
 	}
 	else {
-		die "#$id# not in lineage file."
+		die "ERROR: #$id# not in lineage file."
 	}
 	
 	print OUT "\n>$id;$lin;#$host;#$resist";

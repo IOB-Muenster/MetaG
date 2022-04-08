@@ -31,62 +31,124 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-#======================================================================#
+#=========================================================================================================#
+# Build a MetaG compatible database from RDP
+#---------------------------------------------------------------------------------------------------------#
+# 
 # DESCRIPTION
 # 
-# 	Using a RDP FASTA file, this script will create a taxonomy
-#	and a FASTA file in MetaG format. It aims to improve the
-#	taxonomic resulotion of RDP, by setting uninformative taxon
-#	names to a common expression (e.g.: uncultured * --> uncultured).
-#	Besides, species and strain names are separated.
+#	Using a RDP FASTA file, this script will create a taxonomy and a FASTA file in MetaG format. It aims
+#	to improve the taxonomic resulotion of RDP, by setting uninformative taxon names to a common
+#	expression (e.g.: uncultured * --> uncultured). Besides, species and strain names are separated.
 #
 # USAGE
-#
-#	Replace all ";" in FASTA headers of RDP file with ",".
-#	The input FASTA file must be called db.fa. Then run this
-#	script in the directory of db.fa:
-#		./makeRDP.pl
 # 
-# OUTPUT
+#	Download the RDP FASTA file(s) from https://rdp.cme.msu.edu/misc/resources.jsp. If you downloaded
+#	multiple files, concatenate the extracted FASTA files into a single file. Replace all ";" in FASTA
+#	headers with ",". Then run:	
+#		
+#	makeRDP.pl -input rdp.fa
 #
-#	The following output files will be created in the current
-#	working directory:
+#	OR
+#
+#	makeRDP.pl -i rdp.fa
+#
+# OUTPUT
+# 
+#	The following output files will be created in the directory of the input FASTA file:
 #
 #	tax.rdp.txt		Taxonomy file in MetaG format
 #	rdp.fa			Fasta file in MetaG format
 #
-# IMPORTANT
-# 
-#	Expects the database to contain only the following ranks:
-# 	"domain", "phylum", "class", "subclass", "order", "suborder",
-#	"family", "genus", "species", "strain"
 #
 # LIMITATIONS
 #
-#	Due to the size of RDP we expect to find special cases that were
-#	beyond the scope of this script. These should be fixed manually.
-#----------------------------------------------------------------------#
+#	Expects the database to contain only the following ranks: "domain", "phylum", "class", "subclass",
+#	"order", "suborder", "family", "genus", "species" and "strain".
+#	Due to the size of RDP we expect that there are special cases whose correction is beyond the scope
+#	of this script. These should be fixed manually.
+#
+#=========================================================================================================#
 
-use Cwd;
+
 use strict;
 use warnings;
-use Data::Dumper;
+use File::Basename;
+use Getopt::Long;
 
-my $cwd = getcwd;
 
-#================= MODIFY HERE ================#
-my $in = "$cwd/db.fa";
-my $outTax = "$cwd/tax.rdp.txt";
-my $outFa = "$cwd/rdp.fa";
-#----------------------------------------------#
+#-----------------------------------------------------------------------------------------------#
+# Parse and check arguments
+#-----------------------------------------------------------------------------------------------#
+my $argC = @ARGV;
 
+my $inF = "";
+my $help = 0;
+
+my $usage = <<'EOF';
+#=========================================================================================================#
+# Build a MetaG compatible database from RDP
+#---------------------------------------------------------------------------------------------------------#
+ 
+ DESCRIPTION
+ 
+	Using a RDP FASTA file, this script will create a taxonomy and a FASTA file in MetaG format. It aims
+	to improve the taxonomic resulotion of RDP, by setting uninformative taxon names to a common
+	expression (e.g.: uncultured * --> uncultured). Besides, species and strain names are separated.
+
+ USAGE
+ 
+	Download the RDP FASTA file(s) from https://rdp.cme.msu.edu/misc/resources.jsp. If you downloaded
+	multiple files, concatenate the extracted FASTA files into a single file. Replace all ";" in FASTA
+	headers with ",". Then run:	
+		
+	makeRDP.pl -input rdp.fa
+
+	OR
+
+	makeRDP.pl -i rdp.fa
+
+ OUTPUT
+ 
+	The following output files will be created in the directory of the input FASTA file:
+
+	tax.rdp.txt		Taxonomy file in MetaG format
+	rdp.fa			Fasta file in MetaG format
+
+
+ LIMITATIONS
+
+	Expects the database to contain only the following ranks: "domain", "phylum", "class", "subclass",
+	"order", "suborder", "family", "genus", "species" and "strain".
+	Due to the size of RDP we expect that there are special cases whose correction is beyond the scope
+	of this script. These should be fixed manually.
+
+#=========================================================================================================#
+EOF
+;
+
+GetOptions ("input:s"   => \$inF,
+           	'help|?' => \$help) or die $usage;
+           	
+if ($help > 0 or not $inF) {
+	print $usage;
+	exit 0;
+}
+
+my $outP = dirname($inF);
+my $outTax = $outP . "/tax.rdp.txt";
+my $outFa = $outP . "/rdp.fa";
+
+
+#-----------------------------------------------------------------------------------------------#
+# Parse RDP taxonomy and write output FASTA.
+#-----------------------------------------------------------------------------------------------#
 my %dbHash =();
-
 
 print "INFO: Loading and analyzing. This will take a while...\n";
 
 open(FA, ">", $outFa) or die "ERROR: Couldn't open output fasta file $outFa, $!";
-open(DB, "<", $in) or die "ERROR: Couldn't open db file $in, $!";
+open(DB, "<", $inF) or die "ERROR: Couldn't open db file $inF, $!";
 while(<DB>) {
 	
 	# Get fasta headers...
@@ -288,6 +350,10 @@ while(<DB>) {
 close (DB);
 close (FA);
 
+
+#-----------------------------------------------------------------------------------------------#
+# Write taxonomy
+#-----------------------------------------------------------------------------------------------#
 print "INFO: Writing taxonomy\n";
 
 my @encList = keys(%dbHash);
@@ -310,7 +376,6 @@ foreach my $enc (@encList) {
 	$printstr = $printstr."\n";
 	print TAX $printstr;
 }
-
 close (TAX);
 
 print "\nDONE\n";
