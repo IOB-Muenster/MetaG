@@ -54,12 +54,12 @@
 #
 # OUTPUT
 #
-#	A fasta file with "metag." prefix and a taxonomy file with "tax." prefix. Both will be created in the
-#	directory of your input file.
+#	A fasta file with "metag." prefix and a taxonomy file with "tax.metag." prefix. Both will be created in
+#	the directory of your input file.
 #
 # DEPENDENCIES
 #
-# 	* NCBI Taxonomy Toolkit v0.7.2 (https://doi.org/10.1101/513523)
+# 	* NCBI Taxonomy Toolkit v0.10.1 (https://doi.org/10.1101/513523)
 #		https://github.com/shenwei356/taxonkit
 #		Must be located in the PATH!
 #	* JSON::Tiny
@@ -124,12 +124,12 @@ my $usage = <<'EOF';
 
  OUTPUT
 
-	A fasta file with "metag." prefix and a taxonomy file with "tax." prefix. Both will be created in the
-	directory of your input file.
+	A fasta file with "metag." prefix and a taxonomy file with "tax.metag." prefix. Both will be created in
+	the directory of your input file.
 
  DEPENDENCIES
 
- 	* NCBI Taxonomy Toolkit v0.8.0 (https://doi.org/10.1101/513523)
+ 	* NCBI Taxonomy Toolkit v0.10.1 (https://doi.org/10.1101/513523)
 		https://github.com/shenwei356/taxonkit
 		Must be located in the PATH!
 	* JSON::Tiny
@@ -184,6 +184,8 @@ system("echo \"9606\" | taxonkit lineage --data-dir $taxkitData >/dev/null") and
 
 my $outFasta = dirname($seqF) . "/metag." . basename($seqF);
 my $outTax = dirname($seqF) . "/tax.metag." . basename($seqF);
+$outTax =~ s/\.[^.]*$/\.txt/;
+
 my $header = "";
 my $seq = "";
 my @ids = ();
@@ -270,35 +272,36 @@ while (@ids) {
 			if (not defined $response->content or not $response->content) {
 				print "WARNING: Unexpected API response\n";
 			}
-					
-			$response = decode_json ($response->content);
-			
-			if (exists $response->{'error'}) {
-				print "API ERROR: " . $response->{'error'} . "\n";
-			}
-			else {
-				if (defined $response->{'result'}->{'uids'}) {
+			else {	
+				$response = decode_json ($response->content);
 				
-					foreach my $uid (@{$response->{'result'}->{'uids'}}) {
-						my $taxid = 0;
-						
-						if (exists $response->{'result'}->{$uid}->{'taxid'}) {
-							$taxid = $response->{'result'}->{$uid}->{'taxid'};
-							my $seqidApi = $response->{'result'}->{$uid}->{'caption'};
-							my $seqid = $ids{$seqidApi};
-							$taxids{$seqid} = $taxid;
-							delete $ids{$seqidApi};
-							
-							# Flag to break out of the while loop
-							$isSuccess = 1;
-						}
-						else {
-							print "ERROR unexpected API response. No taxid returned.\n"
-						}
-					}
+				if (exists $response->{'error'}) {
+					print "API ERROR: " . $response->{'error'} . "\n";
 				}
 				else {
-					print "WARNING: Unexpected API response\n";
+					if (defined $response->{'result'}->{'uids'}) {
+					
+						foreach my $uid (@{$response->{'result'}->{'uids'}}) {
+							my $taxid = 0;
+							
+							if (exists $response->{'result'}->{$uid}->{'taxid'}) {
+								$taxid = $response->{'result'}->{$uid}->{'taxid'};
+								my $seqidApi = $response->{'result'}->{$uid}->{'caption'};
+								my $seqid = $ids{$seqidApi};
+								$taxids{$seqid} = $taxid;
+								delete $ids{$seqidApi};
+								
+								# Flag to break out of the while loop
+								$isSuccess = 1;
+							}
+							else {
+								print "ERROR unexpected API response. No taxid returned.\n"
+							}
+						}
+					}
+					else {
+						print "WARNING: Unexpected API response\n";
+					}
 				}
 			}
 		}
@@ -358,6 +361,11 @@ while(<TMPTAX>) {
 	
 	# Get the whole tab-delimited and reformated taxonomy
 	my @taxa = @splits[2..$#splits];
+	
+	if (not @taxa) {
+		print "DEBUG: Lost $seqid. No lineage.\n" if ($debug == 1);
+		next;
+	}
 	
 	# Reformatted taxonomy has 8 ranks. MetaG needs 10.
 	# Insert subclass and suborder as "0" = unknown
