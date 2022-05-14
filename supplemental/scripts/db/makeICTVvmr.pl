@@ -111,7 +111,8 @@ my $usage = <<'EOF';
  
  	Download the ICTV VMR spreadsheet from https://talk.ictvonline.org/taxonomy/vmr/ .
  	Save the sheet containing the taxonomy as a CSV file, replace empty cells with "NA", and remove
- 	line breaks in fields. The field separator must be tab. Then run makeICTVvmr.pl on the CSV file.
+ 	line breaks in fields. Replace commas in the GENBANK accession field with semicolons. The field
+ 	separator must be tab. Then run makeICTVvmr.pl on the CSV file.
 		
 	makeICTVvmr.pl -input vmr.csv
 
@@ -161,9 +162,9 @@ if ($help > 0 or not $inF) {
 }
 
 my $outP = dirname($inF);
-my $outTaxP = "$outP/tax.ictv_vmr.txt";
-my $outHostP = "$outP/patho.ictv_vmr.txt";
-my $outSeqP = "$outP/ictv_vmr.fa";
+my $outTaxP = "$outP/tax.ICTV_vmr.txt";
+my $outHostP = "$outP/patho.ICTV_vmr.txt";
+my $outSeqP = "$outP/ICTV_vmr.fa";
 
 
 #-----------------------------------------------------------------------------------------------#
@@ -190,11 +191,11 @@ while(<INTAX>) {
 	my @splits = split("\t", $_);
 		
 	# Filter strange undef entries
-	print "ERROR: @splits\nFound only ".@splits." entries. Expected 26-\n" if (@splits < 26);
-	next if (@splits < 26);
+	print "ERROR: @splits\nFound only ".@splits." entries. Expected 25-\n" if (@splits < 25);
+	next if (@splits < 25);
 	
 	my $genbID = $splits[21];
-	my $host = $splits[25];
+	my $host = $splits[$#splits];
 	my @hosts = split(/,/, $host);
 	
 	# Use only entries having a genbank ID
@@ -268,6 +269,8 @@ close(OUTHOST);
 # file.
 #-----------------------------------------------------------------------------------------------#
 my @ids = keys(%ids);
+die "ERROR: No IDs remaining" if (not @ids);
+
 my $i = 0;
 my $chunkSize = 1000;
 
