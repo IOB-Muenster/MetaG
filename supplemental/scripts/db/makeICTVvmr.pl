@@ -43,7 +43,9 @@
 # 
 # 	Download the ICTV VMR spreadsheet from https://talk.ictvonline.org/taxonomy/vmr/ .
 # 	Save the sheet containing the taxonomy as a CSV file, replace empty cells with "NA", and remove
-# 	line breaks in fields. The field separator must be tab. Then run makeICTVvmr.pl on the CSV file.
+# 	line breaks in fields. Replace commas in the GENBANK accession field with semicolons. The field
+# 	separator must be tab. Then run makeICTVvmr.pl on the CSV file. The field separator must be tab.
+#	Then run makeICTVvmr.pl on the CSV file.
 #		
 #	makeICTVvmr.pl -input vmr.csv
 #
@@ -191,10 +193,10 @@ while(<INTAX>) {
 	my @splits = split("\t", $_);
 		
 	# Filter strange undef entries
-	print "ERROR: @splits\nFound only ".@splits." entries. Expected 25-\n" if (@splits < 25);
-	next if (@splits < 25);
+	print "ERROR: @splits\nFound only ".@splits." entries. Expected 24\n" if (@splits < 24);
+	next if (@splits < 24);
 	
-	my $genbID = $splits[21];
+	my $genbID = $splits[20];
 	my $host = $splits[$#splits];
 	my @hosts = split(/,/, $host);
 	
@@ -202,8 +204,8 @@ while(<INTAX>) {
 	next if ($genbID eq "NA" or $genbID eq "");
 	
 	# Get and reformat taxonomy
-	my $tax = join(";", @splits[2..16]);
-	$tax .= ";".$splits[20];
+	my $tax = join(";", @splits[1..15]);
+	$tax .= ";".$splits[19];
 	$tax =~ s/;NA/;0/g;
 	$tax =~ s/^NA;/0;/g;
 	
