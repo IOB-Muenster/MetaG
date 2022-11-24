@@ -43,15 +43,15 @@
 # 
 # 	Download the ICTV VMR spreadsheet from https://talk.ictvonline.org/taxonomy/vmr/ .
 # 	Save the sheet containing the taxonomy as a CSV file, replace empty cells with "NA", and remove
-# 	line breaks in fields. Replace commas in the GENBANK accession field with semicolons. The field
-# 	separator must be tab. Then run makeICTVvmr.pl on the CSV file. The field separator must be tab.
-#	Then run makeICTVvmr.pl on the CSV file.
+# 	line breaks in fields. The field separator must be tab. Then run makeICTVvmr.pl on the CSV file.
+#	If -allow-dups is provided and there are duplicate GenBank IDs, the script will keep one of the
+#	copies. By default, both are removed. 
 #		
-#	makeICTVvmr.pl -input vmr.csv
+#	makeICTVvmr.pl -input vmr.csv [ -allow-dups ]
 #
 #	OR
 #
-#	makeICTVvmr.pl -i vmr.csv
+#	makeICTVvmr.pl -i vmr.csv [ -a ]
 #
 # OUTPUT
 # 
@@ -71,8 +71,8 @@
 #	
 # LIMITATIONS
 #	
-#	GenBank IDs must only be used once. Otherwise, only the first entry is kept. You may want to report
-#	duplicate IDs to the ICTV team.
+#	GenBank IDs must only be used once. Otherwise, only the first (or no) entry is kept (depending on
+#   the setting of -allow-dups). You may want to report duplicate IDs to the ICTV team.
 #	IDs which are not reported by the NCBI API are present in the tax.VMR.txt and patho.VMR.txt, but
 #	not in the VMR.fa. Additional taxa in these files do not influence downstream analyses. You may want
 #	to check, if the GenBank IDs are valid and contact NCBI or ICTV, depending on the situation.
@@ -99,6 +99,7 @@ my $argC = @ARGV;
 
 my $inF = "";
 my $help = 0;
+my $allowDups = 0;
 
 my $usage = <<'EOF';
 #=======================================================================================================#
@@ -113,14 +114,15 @@ my $usage = <<'EOF';
  
  	Download the ICTV VMR spreadsheet from https://talk.ictvonline.org/taxonomy/vmr/ .
  	Save the sheet containing the taxonomy as a CSV file, replace empty cells with "NA", and remove
- 	line breaks in fields. Replace commas in the GENBANK accession field with semicolons. The field
- 	separator must be tab. Then run makeICTVvmr.pl on the CSV file.
+ 	line breaks in fields. The field separator must be tab. Then run makeICTVvmr.pl on the CSV file.
+ 	If -allow-dups is provided and there are duplicate GenBank IDs, the script will keep one of the
+	copies. By default, both are removed. 
 		
-	makeICTVvmr.pl -input vmr.csv
+	makeICTVvmr.pl -input vmr.csv [ -allow-dups ]
 
 	OR
 
-	makeICTVvmr.pl -i vmr.csv
+	makeICTVvmr.pl -i vmr.csv [ -a ]
 
  OUTPUT
  
@@ -140,8 +142,8 @@ my $usage = <<'EOF';
 	
 LIMITATIONS
 	
-	GenBank IDs must only be used once. Otherwise, only the first entry is kept. You may want to report
-	duplicate IDs to the ICTV team.
+	GenBank IDs must only be used once. Otherwise, only the first (or no) entry is kept (depending on
+	the setting of -allow-dups). You may want to report duplicate IDs to the ICTV team.
 	IDs which are not reported by the NCBI API are present in the tax.VMR.txt and patho.VMR.txt, but
 	not in the VMR.fa. Additional taxa in these files do not influence downstream analyses. You may want
 	to check, if the GenBank IDs are valid and contact NCBI or ICTV, depending on the situation.
@@ -156,6 +158,7 @@ EOF
 ;
 
 GetOptions ("input:s"   => \$inF,
+			'allow-dups|?' => \$allowDups,
            	'help|?' => \$help) or die $usage;
            	
 if ($help > 0 or not $inF) {
@@ -174,6 +177,7 @@ my $outSeqP = "$outP/ICTV_vmr.fa";
 #-----------------------------------------------------------------------------------------------#
 my $rankNames = "realm;subrealm;kingdom;subkingdom;phylum;subphylum;class;subclass;order;suborder;family;subfamily;genus;subgenus;species;isolate_seqName";
 my %ids = ();
+my %dups = ();
 
 print "INFO: Reading input taxonomy from $inF\n";
 
@@ -210,8 +214,10 @@ while(<INTAX>) {
 	$tax =~ s/^NA;/0;/g;
 	
 	# Sometimes one entry has multiple genbank IDs.
-	# Create separate entries per ID.	
-	my @genbIDs = split("; ", $genbID);
+	# Create separate entries per ID.
+	$genbID =~ s/,/;/g;
+	$genbID =~ s/; /;/g;
+	my @genbIDs = split(";", $genbID);
 	
 	foreach my $id (@genbIDs) {
 		$id =~ s/;$//;
@@ -229,9 +235,19 @@ while(<INTAX>) {
         $id =~ s/^\s+|\s+$//; 
 		
 		if (exists $ids{$id}) {
-			print "ERROR: GenBank id $id is not unique. Removed duplicate entry.\n";
-            print "\tCURRENT: $tax" . ": $seqName\n\tFIRST SEEN:" . $ids{$id} . "\n";
-			next;
+			# Allow one of the duplicate IDs in the FASTA file
+			if ($allowDups == 1) {
+				print "ERROR: GenBank id $id is not unique. Removed duplicate entry.\n";
+            	print "\tCURRENT: $tax" . ": $seqName\n\tFIRST SEEN:" . $ids{$id} . "\n";
+				next;
+			}
+			# Remove all entries belonging to a duplicate ID
+			else {
+				print "ERROR: GenBank id $id is not unique. Removing all occurences.\n";
+				print "\tCURRENT: $tax" . ": $seqName\n\tFIRST SEEN:" . $ids{$id} . "\n";
+				$dups{$id} = undef;
+				next;
+			}
 		}
 		else {
 			$ids{$id} = $tax . ": $seqName";
@@ -264,6 +280,13 @@ while(<INTAX>) {
 close(INTAX);
 close(OUTTAX);
 close(OUTHOST);
+
+# Delete duplicate IDs
+if ($allowDups == 0 and %dups) {
+	foreach my $dup (keys(%dups)) {
+		delete $ids{$dup};
+	}
+}
 
 
 #-----------------------------------------------------------------------------------------------#
