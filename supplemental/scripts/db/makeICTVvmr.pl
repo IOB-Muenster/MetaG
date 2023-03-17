@@ -200,7 +200,7 @@ while(<INTAX>) {
 	print "ERROR: @splits\nFound only ".@splits." entries. Expected 24\n" if (@splits < 24);
 	next if (@splits < 24);
 	
-	my $genbID = $splits[20];
+	my $genbID = $splits[21];
 	my $host = $splits[$#splits];
 	my @hosts = split(/,/, $host);
 	
@@ -208,8 +208,8 @@ while(<INTAX>) {
 	next if ($genbID eq "NA" or $genbID eq "");
 	
 	# Get and reformat taxonomy
-	my $tax = join(";", @splits[1..15]);
-	$tax .= ";".$splits[19];
+	my $tax = join(";", @splits[2..16]);
+	$tax .= ";".$splits[20];
 	$tax =~ s/;NA/;0/g;
 	$tax =~ s/^NA;/0;/g;
 	
