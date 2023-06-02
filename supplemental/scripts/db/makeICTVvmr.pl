@@ -41,7 +41,7 @@
 #
 # USAGE
 # 
-# 	Download the ICTV VMR spreadsheet from https://talk.ictvonline.org/taxonomy/vmr/ .
+# 	Download the ICTV VMR spreadsheet from https://ictv.global/vmr .
 # 	Save the sheet containing the taxonomy as a CSV file, replace empty cells with "NA", and remove
 # 	line breaks in fields. The field separator must be tab. Then run makeICTVvmr.pl on the CSV file.
 #	If -allow-dups is provided and there are duplicate GenBank IDs, the script will keep one of the
@@ -112,7 +112,7 @@ my $usage = <<'EOF';
 
  USAGE
  
- 	Download the ICTV VMR spreadsheet from https://talk.ictvonline.org/taxonomy/vmr/ .
+ 	Download the ICTV VMR spreadsheet from https://ictv.global/vmr .
  	Save the sheet containing the taxonomy as a CSV file, replace empty cells with "NA", and remove
  	line breaks in fields. The field separator must be tab. Then run makeICTVvmr.pl on the CSV file.
  	If -allow-dups is provided and there are duplicate GenBank IDs, the script will keep one of the
