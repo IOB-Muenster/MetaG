@@ -37,7 +37,7 @@
 #
 # USAGE
 # 
-# 	Download the genome_lineage and genome_metadata from ftp://ftp.patricbrc.org/RELEASE_NOTES/ .
+# 	Download the genome_lineage and genome_metadata from ftp://ftp.bvbrc.org/RELEASE_NOTES/ .
 #	Limit the genome_metadata to human hosts using
 #	
 #	awk -F '\t' '{if (tolower($46) ~ /^human|^homo/) {print $1"\tHomo sapiens\t"$53}}' \
