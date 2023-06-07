@@ -71,7 +71,7 @@ It is distributed under the GNU General Public License.
 	http://www.gnu.org/licenses/
 
 ## PATRIC
-See the PATRIC publication.
+See the PATRIC publication. PATRIC is now part of the BV-BRC database.
 
 Wattam AR, Davis JJ, Assaf R, Boisvert S, Brettin T, Bun C,
 Conrad N, Dietrich EM, Disz T, Gabbard JL, et al. 2017.
