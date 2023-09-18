@@ -1,14 +1,14 @@
 # Access
 Due to file size limitations, the databases can be found here:
 
-* GRCh38p13 (filter workflow): http://bioinformatics.uni-muenster.de/tools/metag/download/GRCh38p13.zip
-* ICTV_vmr: http://bioinformatics.uni-muenster.de/tools/metag/download/ICTV_vmr.zip
-* MTXssuLSU from Metaxa2.2 : http://bioinformatics.uni-muenster.de/tools/metag/download/MTXssuLSU.zip
-* PATRIC: http://bioinformatics.uni-muenster.de/tools/metag/download/PATRIC.zip
-* RDP16s28s version 11, update 5: http://bioinformatics.uni-muenster.de/tools/metag/download/RDP16s28s.zip
-* RefSeq: http://www.bioinformatics.uni-muenster.de/tools/metag/download/refseq.zip
+* T2T-CHM13v2 (filter workflow): https://www.bioinformatics.uni-muenster.de/tools/metag/download/T2T-CHM13v2.zip
+* ICTV_vmr: https://bioinformatics.uni-muenster.de/tools/metag/download/ICTV_vmr.zip
+* MTXssuLSU from Metaxa2.2 : https://bioinformatics.uni-muenster.de/tools/metag/download/MTXssuLSU.zip
+* PATRIC: https://bioinformatics.uni-muenster.de/tools/metag/download/PATRIC.zip
+* RDP16s28s version 11, update 5: https://bioinformatics.uni-muenster.de/tools/metag/download/RDP16s28s.zip
+* RefSeq: https://www.bioinformatics.uni-muenster.de/tools/metag/download/refseq.zip
 
-Use the md5sums.txt file to verify your download: http://bioinformatics.uni-muenster.de/tools/metag/download/md5sums.txt
+Use the md5sums.txt file to verify your download: https://bioinformatics.uni-muenster.de/tools/metag/download/md5sums.txt
 
 # How to use the databases with MetaG?
 Supply "tax." files as -ltax and "patho." files as -pdbPath.
@@ -20,20 +20,12 @@ For the databases used in the filter workflow, no "tax." and
 
 # References
 
-## GRCh38p13 (filter workflow)
-Human genome used in the filter workflow of MetaG. It was downloaded from RefSeq.
+## T2T-CHM13v2 (filter workflow)
+Human genome used in the filter workflow of MetaG. It was downloaded from RefSeq (GCF_009914755.1).
 
-O'Leary NA, Wright MW, Brister JR, Ciufo S, Haddad D, McVeigh R, Rajput B,
-Robbertse B, Smith-White B, Ako-Adjei D, Astashyn A, Badretdin A, Bao Y,
-Blinkova O, Brover V, Chetvernin V, Choi J, Cox E, Ermolaeva O, Farrell CM,
-Goldfarb T, Gupta T, Haft D, Hatcher E, Hlavina W, Joardar VS, Kodali VK, Li W,
-Maglott D, Masterson P, McGarvey KM, Murphy MR, O'Neill K, Pujar S, Rangwala SH,
-Rausch D, Riddick LD, Schoch C, Shkeda A, Storz SS, Sun H, Thibaud-Nissen F,
-Tolstoy I, Tully RE, Vatsan AR, Wallin C, Webb D, Wu W, Landrum MJ, Kimchi A,
-Tatusova T, DiCuccio M, Kitts P, Murphy TD, Pruitt KD. 2016.
-	Reference sequence (RefSeq) database at NCBI: current status, taxonomic
-	expansion, and functional annotation.
-	Nucleic Acids Res. 44(D1):D733-45. doi: 10.1093/nar/gkv1189.
+Nurk S, Koren S, Rhie A, et al. 2022.
+	The complete sequence of a human genome.
+	Science 376(6588):44-53. doi:10.1126/science.abj6987.
 
 ## ICTV_vmr
 This data base was derived from: https://ictv.global/vmr/
@@ -44,7 +36,7 @@ Dutilh BE, Harrach B, Harrison RL, Hendrickson RC, Junglen S,
 et al. 2019.
 	Changes to virus taxonomy and the International Code of Virus
 	Classification and Nomenclature ratified by the International
-	Committee on Taxonomy of Viruses (2019).
+	Committee on Taxonomy of Viruses.
 	Arch Virol 164: 2417–2429. doi:10.1007/s00705-019-04306-w.
 
 ## MTXssuLSU from Metaxa2.2

@@ -1,11 +1,11 @@
-#last -a9
-#last -A3
-#last -b7
-#last -B13
-#last -S1
-#lastsplit -m 0.95
+#last -a 11
+#last -A 6
+#last -b 5
+#last -B 11
+#last -S 1
+#lastsplit -m 0.99
        A      C      G      T
-A      5    -13    -10    -15
-C    -15      7    -14    -15
-G    -12    -14      7    -16
-T    -15    -13    -13      5
+A      5    -16     -7    -18
+C    -17      7    -16    -15
+G     -8    -17      7    -18
+T    -18    -14    -17      5
