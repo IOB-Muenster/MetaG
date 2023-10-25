@@ -62,7 +62,7 @@
 #
 # DEPENDENCIES
 #
-# 	* NCBI Taxonomy Toolkit v0.10.1 (https://doi.org/10.1101/513523)
+# 	* NCBI Taxonomy Toolkit v0.10.1 (https://doi.org/10.1016/j.jgg.2021.03.006)
 #		https://github.com/shenwei356/taxonkit
 #		Must be located in the PATH!
 #	* JSON::Tiny
@@ -135,7 +135,7 @@ my $usage = <<'EOF';
 
  DEPENDENCIES
 
- 	* NCBI Taxonomy Toolkit v0.10.1 (https://doi.org/10.1101/513523)
+ 	* NCBI Taxonomy Toolkit v0.10.1 (https://doi.org/10.1016/j.jgg.2021.03.006)
 		https://github.com/shenwei356/taxonkit
 		Must be located in the PATH!
 	* JSON::Tiny
