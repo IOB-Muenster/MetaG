@@ -540,10 +540,17 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 							
 							# ... however, the species and strain name must be the same. So, I arbitrarily look up the first ID in dbHash.
 							# It is more convenient to display strains that are not 0 and thus not "unclassified"
-							my $strain = $dbHash{$DBids[0]}{$ranks[-1]};
-							$strain = "" if ($strain =~ m/^0$/);
-							my $name = $dbHash{$DBids[0]}{$ranks[-2]}." ".$strain;
+							# Only do this, if the lowest rank is not the species.
+							my $name = "";
 							
+							if ($ranks[-1] !~ m/species/i ) {
+								my $strain = $dbHash{$DBids[0]}{$ranks[-1]};
+								$strain = "" if ($strain =~ m/^0$/);
+								$name = $dbHash{$DBids[0]}{$ranks[-2]}." ".$strain;
+							}
+							else {
+								$name = $dbHash{$DBids[0]}{$ranks[-1]}
+							}
 							
 							
 							foreach my $id (@DBids) {
