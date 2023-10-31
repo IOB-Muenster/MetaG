@@ -32,30 +32,25 @@
 
 
 #=======================================================================================================#
-# Build a MetaG compatible database from PATRIC
+# Build a MetaG compatible database from BV-BRC (formely PATRIC)
 #-------------------------------------------------------------------------------------------------------#
 #
 # USAGE
 # 
-# 	Download the genome_lineage and genome_metadata from ftp://ftp.bvbrc.org/RELEASE_NOTES/ .
-#	Limit the genome_metadata to human hosts using
-#	
-#	awk -F '\t' '{if (tolower($46) ~ /^human|^homo/) {print $1"\tHomo sapiens\t"$53}}' \
-#		genome_metadata > patricHuman.txt
-#	
-#	Then run makePATRIC.pl on the genome_lineage file and the freshly created patricHuman.txt file.	
+# 	Download the genome_lineage and genome_metadata from ftp://ftp.bvbrc.org/RELEASE_NOTES/ and
+#	run run makePATRIC.pl.
 #		
-#	makePATRIC.pl -metadata patricHuman.txt -lineage genome_lineage
+#	makePATRIC.pl -metadata genome_metadata -lineage genome_lineage
 #
 #	OR
 #
-#	makePATRIC.pl -m patricHuman.txt -l genome_lineage
+#	makePATRIC.pl -m genome_metadata -l genome_lineage
 #
 # OUTPUT
 #
-#	A PATRIC host file called patho.PATRIC.txt in the directory of the genome_lineage file.
+#	A host file called patho.PATRIC.txt in the directory of the genome_lineage file.
 #	This can be used as -pdbPath for MetaG. The file has the following format:
-#	PATRICgenomeID;lineage;#host;#resistance .
+#	BV-BRCgenomeID;lineage;#host;#resistance .
 #
 #=========================================================================================================#
 
@@ -77,30 +72,25 @@ my $help = 0;
 
 my $usage = <<'EOF';
 #=======================================================================================================#
-# Build a MetaG compatible database from PATRIC
+# Build a MetaG compatible database from BV-BRC (formerly PATRIC)
 #-------------------------------------------------------------------------------------------------------#
 
  USAGE
  
- 	Download the genome_lineage and genome_metadata from ftp://ftp.patricbrc.org/RELEASE_NOTES/ .
-	Limit the genome_metadata to human hosts using
-	
-	awk -F '\t' '{if (tolower($46) ~ /^human|^homo/) {print $1"\tHomo sapiens\t"$53}}' \
-		genome_metadata > patricHuman.txt
-	
-	Then run makePATRIC.pl on the genome_lineage file and the freshly created patricHuman.txt file.	
+ 	Download the genome_lineage and genome_metadata from ftp://ftp.bvbrc.org/RELEASE_NOTES/ and
+ 	run run makePATRIC.pl.
 		
-	makePATRIC.pl -metadata patricHuman.txt -lineage genome_lineage
+	makePATRIC.pl -metadata genome_metadata -lineage genome_lineage
 
 	OR
 
-	makePATRIC.pl -m patricHuman.txt -l genome_lineage
+	makePATRIC.pl -m genome_metadata -l genome_lineage
 
  OUTPUT
 
-	A PATRIC host file called patho.PATRIC.txt in the directory of the genome_lineage file.
+	A host file called patho.PATRIC.txt in the directory of the genome_lineage file.
 	This can be used as -pdbPath for MetaG. The file has the following format:
-	PATRICgenomeID;lineage;#host;#resistance .
+	BV-BRCgenomeID;lineage;#host;#resistance .
 
 #=========================================================================================================#
 EOF
@@ -124,66 +114,54 @@ my $outP = dirname($lineageF);
 my %lins = ();
 open(LIN, "<", "$lineageF") or die "ERROR: Can't open PATRIC lineage";
 while(<LIN>) {
-	
 	# Loose header
 	next if ($_ =~ m/^genome_id/);
 	chomp($_);
 	
-	my @splits = split("\t", $_);
-	my $id = $splits[0];
-	my $species = $splits[1];
-	my ($kingdom, $phylum, $class, $order, $family, $genus,) = @splits[3..8];
+	my @splits = split("\t", $_, -1);
+	my $id = $splits[0] // "";
+	my $species = $splits[1] // "";
 	
+	die "ERROR: No ID\n$_" if (not $id);
+	
+	my ($kingdom, $phylum, $class, $order, $family, $genus,) = @splits[3..8];
 	foreach my $rank ($kingdom, $phylum, $class, $order, $family, $genus, $species) {
 		$rank = "0" if (not $rank);
 	}
 	
 	#Separate species and strain
 	my $strain = 0;
-	if ($species ne "0") {
 		
-		# Improves matching across dbs
-		$species =~ s/"//g;
-		
-		my @specSplits = split(" ", $species);
-		my $lenSpec = @specSplits;
-		
-		if ($lenSpec >= 3) {
-			
-			if ($specSplits[1] =~ m/\.$/ or $specSplits[1] eq "bacterium" or $specSplits[1] eq "undefined") {
-				$species = "unclassified";
-				$strain = join(" ", @specSplits[2..$#specSplits]);
-			}
-			elsif($specSplits[0] eq "uncultured") {
-				$species = "uncultured";
-			}
-			elsif ($specSplits[0] =~ m/^[a-z0-9]/) {
-				$species = "unclassified";
-				$strain = join(" ", @specSplits);
-			}
-			else {
-				$species = join(" ", @specSplits[0..1]);
+	# Improves matching across dbs
+	$species =~ s/"//g;
+	
+	my @specSplits = split(" ", $species);
+	my $lenSpec = @specSplits;
+	
+	if ($lenSpec < 2) {
+		$species = "unclassified";
+	}
+	else {
+		if ($specSplits[1] =~ m/\.$/ or $specSplits[1] eq "bacterium" or $specSplits[1] eq "undefined") {
+			$species = "unclassified";
+			if ($lenSpec >= 3) {
 				$strain = join(" ", @specSplits[2..$#specSplits]);
 			}
 		}
+		elsif($specSplits[0] eq "uncultured") {
+			$species = "uncultured";
+		}
+		elsif ($specSplits[0] =~ m/^[a-z0-9]/) {
+			$species = "unclassified";
+			$strain = join(" ", @specSplits);
+		}
 		else {
-			
-			if ($lenSpec > 1 and $specSplits[1] =~ /\.$/ or $specSplits[1] eq "bacterium" or $specSplits[1] eq "undefined") {
-				$species = "unclassified";
-			}
-			elsif($specSplits[0] eq "uncultured") {
-				$species = "uncultured";
-			}
-			elsif ($specSplits[0] =~ m/^[a-z0-9]/) {
-				$species = "unclassified";
-				$strain = join(" ", @specSplits);
-			}
-			else {
-				$species = join(" ", @specSplits);
+			$species = join(" ", @specSplits[0..1]);
+			if ($lenSpec >= 3) {
+				$strain = join(" ", @specSplits[2..$#specSplits]);
 			}
 		}
 	}
-	
 	$strain =~ s/;/,/g;
 	$lins{$id} = "$kingdom;$phylum;$class;0;$order;0;$family;$genus;$species;$strain";
     
@@ -191,7 +169,7 @@ while(<LIN>) {
 
 
 open(OUT, ">", "$outP/patho.PATRIC.txt") or die "ERROR: Can't open OUTFILE";
-print OUT "#PATRICgenomeID;lineage;#host;#resistance";
+print OUT "#BV-BRCgenomeID;lineage;#host;#resistance";
 
 
 #-----------------------------------------------------------------------------------------------#
@@ -199,19 +177,24 @@ print OUT "#PATRICgenomeID;lineage;#host;#resistance";
 #-----------------------------------------------------------------------------------------------#
 open(META, "<", "$metaF") or die "ERROR: Can't open PATRIC metadata";
 while(<META>) {
-	
 	next if ($_ =~ m/^#/);
 	chomp($_);
 	
-	my @splits = split("\t", $_);
-	my $id = $splits[0];
-	my $host = $splits[1];
+	my @splits = split("\t", $_, -1);
+	my $id = $splits[0] // "";
+	my $host = $splits[45] // "";
 	
-	# Correct spelling errors
-	$host = "Human" if ($host =~ m/^Human/ or $host =~ m/^Homo/);
-	$host =~ s/;/,/g;
+	die "ERROR: No ID\n$_" if (not $id);
 	
-	my $resist = $splits[2];
+	# Retain only species from human host
+	if (lc($host) =~ m/^human/ or lc($host) =~ m/^homo/) {
+		$host = "Human" ;
+	}
+	else {
+		next
+	}
+	
+	my $resist = $splits[52] // "";
 	$resist = "0" if (not $resist);
 	$resist =~ s/;/+/g;
 	
