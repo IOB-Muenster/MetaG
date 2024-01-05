@@ -1,15 +1,16 @@
-#last -a16
-#last -b3
-#last -A18
-#last -B3
-#last -S1
-#lastsplit -m 0.95
-#metag -e -4
-#metag -ac 0.9
-#metag -cc 0
+#metag -e -9
+#metag -ac 0.8
+#metag -cc 0.0
 #metag -m williams
+#lastsplit -m 0.99
+#last -t4.66755
+#last -a 10
+#last -A 6
+#last -b 5
+#last -B 10
+#last -S 1
        A      C      G      T
-A      7    -13    -11    -11
-C    -11      6    -13    -11
-G    -11    -12      6    -12
-T    -11    -11    -12      7
+A      6    -17     -7    -16
+C    -15      6    -17    -13
+G     -6    -18      5    -17
+T    -16    -14    -18      6

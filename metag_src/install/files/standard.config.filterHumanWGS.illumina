@@ -1,11 +1,12 @@
-#last -a 52
-#last -A 54
-#last -b 6
-#last -B 1
+#last -t4.27084
+#last -a 47
+#last -A 47
+#last -b 8
+#last -B 4
 #last -S 1
-#lastsplit -m 0.99
+#lastsplit -m 0.95
        A      C      G      T
-A      6    -18    -18    -20
+A      5    -18    -18    -20
 C    -20      7    -18    -20
 G    -20    -18      7    -20
-T    -20    -18    -18      6
+T    -20    -18    -18      5

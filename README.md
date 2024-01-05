@@ -15,7 +15,12 @@ The program was tested on Ubuntu 18.04.3 LTS, macOS 10.15.3 and FreeBSD 12.1.
 
 Free yourself from hardware restrictions: Use [MetaG online](http://www.bioinformatics.uni-muenster.de/tools/metag)!
 
+**IMPORTANT: We tested MetaG with LAST version <=1256 . In some later versions, the command line syntax of LAST has changed which will lead to unexpected behaviour of MetaG.**
+
 ## Major updates
+### 08.01.2024 - New training
+We completely rewrote the training scripts, used new training data, and updated the standards for RDP, MTX, and RefSeq.
+
 ### 04.08.2021 - Filter workflow
 We implemented a new workflow (--filter) which allows you to remove reads from a specific organism from the sample. Why do you
 need this? Let's have a look at two samples: An environmental sample and a patient sample. In the environmental sample from a pond
@@ -31,11 +36,11 @@ Download this folder to install MetaG locally. See [README](../../blob/master/me
 to learn how to get started.
 
 ### supplemental
-Supplemental files and scripts for the publication. See [README](../../blob/master/supplemental/README.md) in this directory
-for further details.
+Supplemental files and scripts. See [README](../../blob/master/supplemental/README.md) in this directory for further details.
 
 ## Authors
 * Felix Manske, felix.manske@uni-muenster.de
+* Marc-Nicolas Bendisch
 * Norbert Grundmann
 * Author for correspondence: Wojciech Makalowski, wojmak@uni-muenster.de
 
