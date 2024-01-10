@@ -19,7 +19,8 @@ Free yourself from hardware restrictions: Use [MetaG online](http://www.bioinfor
 
 ## Major updates
 ### 08.01.2024 - New training
-We completely rewrote the training scripts, used new training data, and updated the standards for RDP, MTX, and RefSeq.
+We completely rewrote the training scripts, used new training data, and updated the standards for RDP, MTX, RefSeq, and
+the T2T filter database.
 
 ### 04.08.2021 - Filter workflow
 We implemented a new workflow (--filter) which allows you to remove reads from a specific organism from the sample. Why do you
