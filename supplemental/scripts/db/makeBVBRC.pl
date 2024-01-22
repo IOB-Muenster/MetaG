@@ -131,7 +131,7 @@ while(<LIN>) {
 		$rank = "0" if (not $rank);
 	}
 	
-	#Separate species and strain
+	# Separate species and strain
 	my $strain = 0;
 		
 	# Improves matching across dbs
@@ -179,7 +179,8 @@ print OUT "#BV-BRCgenomeID;lineage;#host;#resistance";
 #-----------------------------------------------------------------------------------------------#
 open(META, "<", "$metaF") or die "ERROR: Can't open BV-BRC metadata";
 while(<META>) {
-	next if ($_ =~ m/^#/);
+	# Loose header
+	next if ($_ =~ m/^genome_id/);
 	chomp($_);
 	
 	my @splits = split("\t", $_, -1);
