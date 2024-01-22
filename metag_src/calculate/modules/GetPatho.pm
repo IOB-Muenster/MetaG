@@ -45,8 +45,8 @@ sub readPatho {
 	my $pdbPath = $_[0];
 	my %pathogens = ();
 	
-	open (PATRIC, "<", $pdbPath) or die "Couldn't open PATRIC file, $!";
-	while(<PATRIC>) {
+	open (BVBRC, "<", $pdbPath) or die "Couldn't open BV-BRC file, $!";
+	while(<BVBRC>) {
 		my $line = $_;
 		
 		next if ($line =~ m/^#/);
@@ -80,7 +80,7 @@ sub readPatho {
 			$pathogens{$spec} = {$strain => [$host, $resist]};
 		}		
 	}
-	close (PATRIC);
+	close (BVBRC);
 	return \%pathogens;	
 }
 
@@ -97,9 +97,9 @@ sub getPatho {
 	# I want to keep the proportions of called species, but I also want to report the hosts/resistances of all strains
 	# for a species. This would make my printed pathogen calls: #calls from getMeta * #host/resistances.
 	# To correct the bias, I multiply the abundance of each species-host-resistance phenotype by a correction factor.
-	# The factor is #calls from get Meta / # total species-host-resistance phenotypes in local PATRIC.
+	# The factor is #calls from get Meta / # total species-host-resistance phenotypes in local BV-BRC.
 	# NOTE: Although the proportions of species are not biased, the percentage of single species-host-resistance phenotypes
-	# 		is influenced by the abundance of the phenotypes in PATRIC and is not a biological pattern. It is a probability.
+	# 		is influenced by the abundance of the phenotypes in BV-BRC and is not a biological pattern. It is a probability.
 
 	
 	my $correctFact = 0;
@@ -108,7 +108,7 @@ sub getPatho {
 	
 	foreach my $species (keys(%candidates)) {
 		
-		# Adjusted species for better comparison between amplicon db and PATRIC, but save unadjusted amplicon DB name
+		# Adjusted species for better comparison between amplicon db and BV-BRC, but save unadjusted amplicon DB name
 		my $adjustedSpec = $species =~ s/\W//gr;
 		$adjustedSpec =~ s/_//g;
 		$adjustedSpec = lc($adjustedSpec);

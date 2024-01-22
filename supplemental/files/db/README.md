@@ -4,7 +4,7 @@ Due to file size limitations, the databases can be found here:
 * T2T-CHM13v2 (filter workflow): https://www.bioinformatics.uni-muenster.de/tools/metag/download/T2T-CHM13v2.zip
 * ICTV_vmr: https://bioinformatics.uni-muenster.de/tools/metag/download/ICTV_vmr.zip
 * MTXssuLSU from Metaxa2.2 : https://bioinformatics.uni-muenster.de/tools/metag/download/MTXssuLSU.zip
-* PATRIC: https://bioinformatics.uni-muenster.de/tools/metag/download/PATRIC.zip
+* BV-BRC (formerly: PATRIC): https://bioinformatics.uni-muenster.de/tools/metag/download/BVBRC.zip
 * RDP16s28s version 11, update 5: https://bioinformatics.uni-muenster.de/tools/metag/download/RDP16s28s.zip
 * RefSeq: https://www.bioinformatics.uni-muenster.de/tools/metag/download/refseq.zip
 
@@ -62,14 +62,14 @@ It is distributed under the GNU General Public License.
 	in a file called 'license.txt'. If not, see:
 	http://www.gnu.org/licenses/
 
-## PATRIC
-See the PATRIC publication. PATRIC is now part of the BV-BRC database.
+## BV-BRC
+See the BV-BRC publication.
 
-Wattam AR, Davis JJ, Assaf R, Boisvert S, Brettin T, Bun C,
-Conrad N, Dietrich EM, Disz T, Gabbard JL, et al. 2017.
-	Improvements to PATRIC, the all-bacterial Bioinformatics Database
-	and Analysis Resource Center.
-	Nucleic Acids Res 45: D535–D542. doi:10.1093/nar/gkw1017.
+Olson RD, Assaf R, Brettin T, Conrad N, Cucinell C, Davis JJ,
+Dempsey DM, Dickerman A, Dietrich EM, Kenyon RW, et al. 2023.
+	Introducing the Bacterial and Viral Bioinformatics Resource
+	Center (BV-BRC): a resource combining PATRIC, IRD and ViPR.
+	Nucleic Acids Res 51:D678-D689. doi: 10.1093/nar/gkac1003
 
 ## RDP16s28s version 11, update 5
 See the RDP publication.

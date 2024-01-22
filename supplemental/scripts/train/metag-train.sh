@@ -72,7 +72,7 @@
 # 	calc.QUERY READS	If query reads were in FASTQ format, this file will
 # 						contain the FASTA reads. Named after the file with the
 # 						query reads.
-# 	tmp.patric.tax 		Mock pathogen database.
+# 	tmp.BVBRC.tax 		Mock pathogen database.
 #	tmp.lasttrain   	Raw output from LAST-TRAIN.
 #	calc.bestalign.mat  Best alignment parameters and matrix from tmp.lasttrain.
 #	calc.lastalign.maf  Alignment (optionally with LAST-SPLIT) from query to database
@@ -174,7 +174,7 @@ HELPMSG='
  	calc.QUERY READS	If query reads were in FASTQ format, this file will
  						contain the FASTA reads. Named after the file with the
  						query reads.
- 	tmp.patric.tax 		Mock pathogen database.
+ 	tmp.BVBRC.tax 		Mock pathogen database.
 	tmp.lasttrain   	Raw output from LAST-TRAIN.
 	calc.bestalign.mat  Best alignment parameters and matrix from tmp.lasttrain.
 	calc.lastalign.maf  Alignment (optionally with LAST-SPLIT) from query to database
@@ -251,7 +251,7 @@ trainMetaG () {
 	cd ${TMP}
 	
 	ln -s $4 "input.query"
-	${METAG} -q input.query -ltax $5 -pdbPath "../../tmp.patric.tax" -e $1 -ac $2 -cc $3 -m "williams" \
+	${METAG} -q input.query -ltax $5 -pdbPath "../../tmp.BVBRC.tax" -e $1 -ac $2 -cc $3 -m "williams" \
 		--no_align "../../calc.lastalign.maf" >> "../../metag_log" 2>&1  || \
 		{ printf "ERROR: MetaG returned an exception\n"; exit 1; }
 	
@@ -528,8 +528,8 @@ else
 	mkdir "tmp"
 	
 	# Create a mock pathogen file to avoid crash of MetaG. Pathogen detection not part of training.
-	printf "#PATRICgenomeID;lineage;#host;#resistance\n" > tmp.patric.tax
-	printf ">1234;0;0;0;0;0;0;0;0;0;0;#Human;#0\n" >> tmp.patric.tax
+	printf "#BV-BRCgenomeID;lineage;#host;#resistance\n" > tmp.BVBRC.tax
+	printf ">1234;0;0;0;0;0;0;0;0;0;0;#Human;#0\n" >> tmp.BVBRC.tax
 fi
 
 

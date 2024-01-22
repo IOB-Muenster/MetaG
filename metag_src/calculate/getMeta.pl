@@ -212,7 +212,7 @@ if ($isVirus == 1) {
 	print "Looking for viral hosts: ".runTime($start)."\n";
 	getHostVir($pathosR, $outPrefix."PATHO.txt", $pdbPath);
 }
-#Lookup strains in PATRIC
+#Lookup strains in BV-BRC
 else{
 	print "Looking for pathogens: ".runTime($start)."\n";
 	getPatho($pathosR, $outPrefix."PATHO.txt", $pdbPath);

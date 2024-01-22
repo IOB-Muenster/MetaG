@@ -38,18 +38,19 @@
 # USAGE
 # 
 # 	Download the genome_lineage and genome_metadata from ftp://ftp.bvbrc.org/RELEASE_NOTES/ and
-#	run run makePATRIC.pl.
+#	run run makeBVBRC.pl.
 #		
-#	makePATRIC.pl -metadata genome_metadata -lineage genome_lineage
+#	makeBVBRC.pl -metadata genome_metadata -lineage genome_lineage
 #
 #	OR
 #
-#	makePATRIC.pl -m genome_metadata -l genome_lineage
+#	makeBVBRC.pl -m genome_metadata -l genome_lineage
 #
 # OUTPUT
 #
-#	A host file called patho.PATRIC.txt in the directory of the genome_lineage file.
-#	This can be used as -pdbPath for MetaG. The file has the following format:
+#	A host file called patho.BVBRC.txt in the directory of the genome_lineage file.
+#	This can be used as -pdbPath for MetaG. The file only contains pathogens from
+#	human hosts and has the following format:
 #	BV-BRCgenomeID;lineage;#host;#resistance .
 #
 #=========================================================================================================#
@@ -78,18 +79,19 @@ my $usage = <<'EOF';
  USAGE
  
  	Download the genome_lineage and genome_metadata from ftp://ftp.bvbrc.org/RELEASE_NOTES/ and
- 	run run makePATRIC.pl.
+ 	run run makeBVBRC.pl.
 		
-	makePATRIC.pl -metadata genome_metadata -lineage genome_lineage
+	makeBVBRC.pl -metadata genome_metadata -lineage genome_lineage
 
 	OR
 
-	makePATRIC.pl -m genome_metadata -l genome_lineage
+	makeBVBRC.pl -m genome_metadata -l genome_lineage
 
  OUTPUT
 
-	A host file called patho.PATRIC.txt in the directory of the genome_lineage file.
-	This can be used as -pdbPath for MetaG. The file has the following format:
+	A host file called patho.BVBRC.txt in the directory of the genome_lineage file.
+	This can be used as -pdbPath for MetaG. The file only contains pathogens from
+	human hosts and has the following format:
 	BV-BRCgenomeID;lineage;#host;#resistance .
 
 #=========================================================================================================#
@@ -109,10 +111,10 @@ my $outP = dirname($lineageF);
 
 
 #-----------------------------------------------------------------------------------------------#
-# Parse PATRIC taxonomy
+# Parse BV-BRC taxonomy
 #-----------------------------------------------------------------------------------------------#
 my %lins = ();
-open(LIN, "<", "$lineageF") or die "ERROR: Can't open PATRIC lineage";
+open(LIN, "<", "$lineageF") or die "ERROR: Can't open BV-BRC lineage";
 while(<LIN>) {
 	# Loose header
 	next if ($_ =~ m/^genome_id/);
@@ -168,14 +170,14 @@ while(<LIN>) {
 }
 
 
-open(OUT, ">", "$outP/patho.PATRIC.txt") or die "ERROR: Can't open OUTFILE";
+open(OUT, ">", "$outP/patho.BVBRC.txt") or die "ERROR: Can't open OUTFILE";
 print OUT "#BV-BRCgenomeID;lineage;#host;#resistance";
 
 
 #-----------------------------------------------------------------------------------------------#
-# Parse PATRIC metadata and connect it to taxonomy
+# Parse BV-BRC metadata and connect it to taxonomy
 #-----------------------------------------------------------------------------------------------#
-open(META, "<", "$metaF") or die "ERROR: Can't open PATRIC metadata";
+open(META, "<", "$metaF") or die "ERROR: Can't open BV-BRC metadata";
 while(<META>) {
 	next if ($_ =~ m/^#/);
 	chomp($_);

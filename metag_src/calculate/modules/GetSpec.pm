@@ -72,9 +72,9 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 			    	my $conf = $confidences[$i + $count];
 			    	
 			    	if ($conf == 0) {
-					$mean = 0;
-					last;
-				}
+						$mean = 0;
+						last;
+					}
 			        $tmp *= $conf;
 			        $count++;
 			    }
@@ -151,7 +151,7 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 	sub getConf {
 		#$taxaStat{$taxon} = [$eValue, $aScore, $taxCount]
 		my %taxaStat = %{$_[0]};
-
+		
 		#One taxon means highest confidence, exit sub
 		my $taxNum = keys(%taxaStat);
 		return 1 if ($taxNum == 1);
@@ -570,7 +570,7 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 					#--------------------------------------------------------------#
 					
 					######### EXPERIMENTAL: Remove () in taxa names, potentially critical in strains
-					# not for PATRIC: only spec queried and those don't contain () #########
+					# not for BV-BRC: only spec queried and those don't contain () #########
 					
 					$maxTaxon =~ s/\(//g;
 					$maxTaxon =~ s/\)//g;
@@ -701,7 +701,7 @@ our @EXPORT_OK = qw(getSpec visOut getStat getUnmatchedSeq);
 						else {
 							# Calculate mean of confidences
 							$mean = getMean(\@confidences, $type);
-										
+							
 							# Handle errors
 							if (not defined $mean) {
 								print "Error while calculating average confidence.\n";
