@@ -18,6 +18,10 @@ Free yourself from hardware restrictions: Use [MetaG online](http://www.bioinfor
 **IMPORTANT: We tested MetaG with LAST version <=1256 . In some later versions, the command line syntax of LAST has changed which will lead to unexpected behaviour of MetaG.**
 
 ## Major updates
+### 14.06.2024 - Description of parameter training
+The description, how parameters were trained for nanopore data, is available in the Supplementary Methods 4.1 to 4.2
+of this [manuscript](https://doi.org/10.1101/2024.06.11.598475).
+
 ### 08.01.2024 - New training
 We completely rewrote the training scripts, used new training data, and updated the standards for RDP, MTX, RefSeq, and
 the T2T filter database.
