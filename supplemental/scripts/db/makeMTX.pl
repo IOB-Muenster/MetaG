@@ -379,6 +379,15 @@ while(<TMPTAX>) {
 		next;
 	}
 	
+	# Loose entries that have unknown ("0") taxon at all ranks.
+	# This can happen, if the associated taxonomy ID was deleted
+	# by NCBI.
+	my %tmps = map {$_ => undef} @taxa;
+	if (scalar(keys(%tmps)) == 1 and exists $tmps{"0"}) {
+		print "DEBUG: Lost $seqid. Only unknown taxa in lineage.\n" if ($debug == 1);
+		next;
+	}
+	
 	# Reformatted taxonomy has 8 ranks. MetaG needs 10.
 	# Insert subclass and suborder as "0" = unknown
 	splice(@taxa, 3, 0, "0");
