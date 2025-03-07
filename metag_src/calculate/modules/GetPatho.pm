@@ -126,7 +126,7 @@ sub getPatho {
 					my $host = $pathogens{$adjustedSpec}{$strain}->[0];
 					my $resist = $pathogens{$adjustedSpec}{$strain}->[1];
 					my @resists = split('\+', $resist);
-					for (my $i = 0; $i<= $candidates{$species}; $i++) {
+					for (my $i = 1; $i<= $candidates{$species}; $i++) {
 						
 						foreach my $res (@resists) {
 							
