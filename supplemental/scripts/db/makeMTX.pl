@@ -337,7 +337,7 @@ while (@accs) {
 	$chunkC++;
 }
 if (keys(%ids)) {
-	die "ERROR: Could not get taxids for sequence ids: ->" . join("<-; ->", keys(%ids)) . "<-\n";
+	die "ERROR: Could not get tax IDs for sequence ids: ->" . join("<-; ->", keys(%ids)) . "<-\n";
 }
 
 open(OUTTAX, ">", $outTax) or die "Could not open output taxonomy file ->$outTax<-";
@@ -357,7 +357,6 @@ my $command 	=	(
 		"\"{domain|cellular root|superkingdom}\t{phylum}\t{class}\t{order}\t{family}\t{genus}\t{species}\t" .
 		"{strain|subspecies}\" $outTax > $tmpTax"
 );
-# For system, exit code 0 is an error.
 system($command);
 $rc				=	$? >> 8;
 die "ERROR: TaxonKit failed." if ($rc != 0);
