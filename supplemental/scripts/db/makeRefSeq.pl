@@ -71,7 +71,7 @@
 # MISCELLANEOUS
 #
 #	*	The first rank is either "domain," "cellular root," or "superkingdom."
-#	*	The last rank after species is either "strain," "subspecies" or "no rank."
+#	*	The last rank after species is either "strain" or "subspecies."
 #	*	If taxonkit indicates that a certain taxonomy ID could not be found, make sure to use the current version of the
 #		NCBI taxdump files (see USAGE).
 #
@@ -97,12 +97,12 @@ use Getopt::Long;
 #----------------------------------------------------------------------------------------------------------------------#
 # Parse and check arguments
 #----------------------------------------------------------------------------------------------------------------------#
-my $help = 0;
-my $debug = 0;
-my $seqF = "";
-my $taxkitData = "";
-my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nuccore&retmode=json";
-my $usage = <<'EOF';
+my $help		=	0;
+my $debug		=	0;
+my $seqF		=	"";
+my $taxkitData	=	"";
+my $url 		=	"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nuccore&retmode=json";
+my $usage		=	<<'EOF';
 #======================================================================================================================#
 # Build a MetaG compatible database from RefSeq's Targeted Loci
 #======================================================================================================================#
@@ -146,7 +146,7 @@ DEPENDENCIES
 MISCELLANEOUS
 
 	*	The first rank is either "domain," "cellular root," or "superkingdom."
-	*	The last rank after species is either "strain," "subspecies" or "no rank."
+	*	The last rank after species is either "strain" or "subspecies."
 	*	If taxonkit indicates that a certain taxonomy ID could not be found, make sure to use the current version of the
 		NCBI taxdump files (see USAGE).
 
@@ -176,7 +176,7 @@ if ($help > 0 or not $seqF) {
 
 if (not $taxkitData) {
 	$taxkitData		=	dirname($seqF);
-	print "INFO: -kitdata omitted. Assuming: ->$taxkitData<-\n";
+	print "INFO: --kitdata omitted. Assuming: ->$taxkitData<-\n";
 }
 # Quick check to see, if taxkitData is OK.
 system("echo \"9606\" | taxonkit lineage --data-dir $taxkitData >/dev/null");
@@ -187,9 +187,10 @@ my $outFasta	=	dirname($seqF) . "/metag." . basename($seqF);
 my $outTax		=	dirname($seqF) . "/tax.metag." . basename($seqF);
 $outTax			=~	s/\.[^.]*$/\.txt/;
 my $header		=	"";
-my $seq			=	"";
+my $id			=	"";
 my @ids			=	();
 my %ids			=	();
+my %seqs		=	();
 my %taxids		=	();
 
 
@@ -197,13 +198,12 @@ my %taxids		=	();
 # Reformat the FASTA file
 #----------------------------------------------------------------------------------------------------------------------#
 print "INFO: Writing FASTA file\n";
-open(OUTFA, ">", $outFasta) or die "Could not open output FASTA file ->$outFasta<-";
 open(SEQ, "<", $seqF) or die "Could not open sequence FASTA file ->$seqF<-";
 while(<SEQ>) {
 	chomp($_);
 	if ($_ =~ m/^>/) {
 		$header			=	(split(" ", $_))[0];
-		my $id			=	$header	=~	s/^>//r;
+		$id				=	$header	=~	s/^>//r;
 				
 		# ID without version needed to check, if all IDs were returned by the API. API looses version tag at the end,
 		# but I also need the original sequence IDs lateron.
@@ -215,18 +215,18 @@ while(<SEQ>) {
 			$ids{$idNoVers}	=	$id;
 			push (@ids, $id);
 		}
-		print OUTFA $seq, "\n" if ($seq);
-		$seq			=	"";
-		print OUTFA $header, "\n";
 	}
 	else {
-		$seq			.=	$_;
+		die "ERROR: Unexpected FASTA: Sequence not preceeded by header in line ->" . $. . "<-\n" if (not $id);
+		if (exists $seqs{$id}) {
+			$seqs{$id}	.=	$_;
+		}
+		else {
+			$seqs{$id}	=	$_;
+		}
 	}
 }
-print OUTFA $seq, "\n" if ($seq);
-$seq 			=	"";
 close(SEQ);
-close(OUTFA);
 
 
 #----------------------------------------------------------------------------------------------------------------------#
@@ -235,6 +235,9 @@ close(OUTFA);
 # Max is 500 for JSON
 my $chunkSize	=	450;
 my $chunkC		=	1;
+# Maximum number of retries for API requests
+my $maxRetry	=	3;
+@ids			=	sort{$a cmp $b} @ids;
 print "INFO: Web request to NCBI: ->" . scalar(@ids) . "<- sequences. Sending chunks of ->$chunkSize<-. " .
 		"This may take a while.\n";
 	
@@ -245,41 +248,61 @@ while (@ids) {
 	my $ua			=	LWP::UserAgent->new(timeout => 40);
 	
 	# Try to query a chunk again, if there was any error. Sometimes NCBI API returns "random" error for valid ID.
-	# Retry at most 3 times.
 	my $retryC		=	0;
-	my $maxRetry	=	3;
 	my $isSuccess	=	0;
 	while ($isSuccess == 0 and $retryC < $maxRetry) {
 		my $response	=	$ua->post($url, \%queries);
 		if (not $response->is_success) {
-			print "ERROR: API error with chunk ->$chunkC<-: ->" . $response->status_line . "<-\n"
+			print "ERROR: API error in chunk ->$chunkC<-: ->" . $response->status_line . "<-\n"
 		}
 		else {
 			if (not defined $response->content or not $response->content) {
 				print "WARNING: Unexpected API response\n";
 			}
-			else {	
+			else {
 				$response	=	decode_json ($response->content);
 				if (exists $response->{'error'}) {
 					print "API ERROR: ->" . $response->{'error'} . "<-\n";
 				}
 				else {
-					if (defined $response->{'result'}->{'uids'}) {
-						foreach my $uid (@{$response->{'result'}->{'uids'}}) {
-							my $taxid	=	0;
-							if (exists $response->{'result'}->{$uid}->{'taxid'}) {
-								$taxid			=	$response->{'result'}->{$uid}->{'taxid'};
-								my $seqidApi	=	$response->{'result'}->{$uid}->{'caption'};
-								my $seqid		=	$ids{$seqidApi};
-								$taxids{$seqid}	=	$taxid;
-								delete $ids{$seqidApi};
-								
-								# Flag to break out of the while loop
-								$isSuccess		=	1;
+					if (exists $response->{'result'}) {
+						if (exists $response->{'result'}->{'uids'}) {
+							my @uids		=	@{$response->{'result'}->{'uids'}};
+							my %seqidApis	=	();
+							if (scalar(@queries) == scalar(@uids)) {
+								for (my $i = 0; $i <= $#uids; $i++) {
+									my $uid		=	$uids[$i];
+									if (exists $response->{'result'}->{$uid}) {
+										my $taxid		=	$response->{'result'}->{$uid}->{'taxid'} // "";
+										my $seqidApi	=	$response->{'result'}->{$uid}->{'caption'} // "";
+										if ($taxid ne "" and $seqidApi ne "" and exists $ids{$seqidApi}) {
+											$seqidApis{$seqidApi}	=	undef;
+											my $seqid				=	$ids{$seqidApi};
+											$taxids{$seqid} 		=	$taxid;
+										}
+									}
+									else {
+										print "WARNING: Unexpected API response.\n"
+									}
+								}
+								# Only remove uids from candidate list after all in batch were successfully retrieved
+								if (scalar(@uids) == scalar(keys(%seqidApis))) {
+									# Flag to break out of the while loop
+									$isSuccess	=	1;
+									foreach my $seqidApi (keys(%seqidApis)) {
+										delete $ids{$seqidApi};
+									}
+								}
+								else {
+									print "WARNING: Unexpected API response. Some results missing.\n"
+								}
 							}
 							else {
-								print "ERROR unexpected API response. No taxid returned.\n"
+								print "WARNING: Too few IDs returned by API\n";
 							}
+						}
+						else {
+							print "WARNING: Unexpected API response\n";
 						}
 					}
 					else {
@@ -295,17 +318,16 @@ while (@ids) {
 				sleep(8);
 			}
 			else {
-				die "ERROR: No valid API response in retry limit\n";
+				die "ERROR: No valid API response within retry limit ->$maxRetry<-\n";
 			}
 		} 
 	}
 	# Only 2 requests per second
 	select(undef, undef, undef, 0.5);
-	
 	$chunkC++;
 }
 if (keys(%ids)) {
-	die "ERROR: Could not get taxid for sequence ids: ->" . join("<-; ->", keys(%ids)) . "<-\n";
+	die "ERROR: Could not get tax IDs for sequence ids: ->" . join("<-; ->", keys(%ids)) . "<-\n";
 }
 
 open(OUTTAX, ">", $outTax) or die "Could not open output taxonomy file ->$outTax<-";
@@ -317,14 +339,13 @@ foreach my $seqid (keys(%taxids)) {
 #----------------------------------------------------------------------------------------------------------------------#
 # Use the NCBI Taxonomy Toolkit to get the lineage for each sequence ID using its tax ID
 #----------------------------------------------------------------------------------------------------------------------#
-print "INFO: Obtaining lineage info for tax ID\n";
+print "INFO: Getting lineage info from tax IDs\n";
 my $tmpTax		=	dirname($outTax) . "/tmp." . basename($outTax);
-
-# Use the taxid in the second column to write a temporary taxonomy with 8 ranks, missing ranks are "0"
+# Use the tax ID in the second column to write a temporary taxonomy with 8 ranks, missing ranks are "0"
 my $command 	=	(
 	"taxonkit reformat2 -I 2 --data-dir $taxkitData --miss-rank-repl \"0\" -f " .
 		"\"{domain|cellular root|superkingdom}\t{phylum}\t{class}\t{order}\t{family}\t{genus}\t{species}\t" .
-		"{strain|subspecies|no rank}\" $outTax > $tmpTax"
+		"{strain|subspecies}\" $outTax > $tmpTax"
 );
 system($command);
 $rc				=	$? >> 8;
@@ -334,9 +355,10 @@ die "ERROR: TaxonKit failed." if ($rc != 0);
 #----------------------------------------------------------------------------------------------------------------------#
 # Reformat output
 #----------------------------------------------------------------------------------------------------------------------#
-print "INFO: Writing taxonomy to ->$outTax<-\n";
-open(OUTTAX, ">", $outTax) or die "Could not open output taxonomy file ->$outTax<-";
-open(TMPTAX, "<", $tmpTax) or die "Could not open temporary taxonomy file ->$tmpTax<-";
+print "INFO: Writing taxonomy file ->$outTax<-\n";
+open(OUTSEQ, ">",$outFasta) or die "ERROR: Could not open output FASTA file ->$outFasta<-";
+open(OUTTAX, ">", $outTax) or die "ERROR: Could not open final output taxonomy file ->$outTax<-";
+open(TMPTAX, "<", $tmpTax) or die "ERROR: Could not open temporary taxonomy file ->$tmpTax<-";
 while(<TMPTAX>) {
 	chomp($_);
 	my @splits		=	split("\t", $_);
@@ -348,13 +370,22 @@ while(<TMPTAX>) {
 		print "DEBUG: Lost ->$seqid<-. No lineage.\n" if ($debug == 1);
 		next;
 	}
-	# Taxonomy has 8 ranks. MetaG needs 10. Insert subclass and suborder as "0" = unknown.
+	# Loose entries that have unknown ("0") taxon at all ranks. This can happen, if the associated taxonomy ID was
+	# deleted by NCBI.
+	my %tmps		=	map {$_ => undef} @taxa;
+	if (scalar(keys(%tmps)) == 1 and exists $tmps{"0"}) {
+		print "DEBUG: Lost ->$seqid<-. Only unknown taxa in lineage.\n" if ($debug == 1);
+		next;
+	}
+	# Reformatted taxonomy has 8 ranks. MetaG needs 10. Insert subclass and suborder as "0" = unknown
 	splice(@taxa, 3, 0, "0");
 	splice(@taxa, 5, 0, "0");
 	print OUTTAX $seqid, ";", join(";", @taxa), "\n";
+	print OUTSEQ ">" . $seqid . "\n" . $seqs{$seqid} ."\n";
 }
 close(TMPTAX);
 close(OUTTAX);
+close(OUTSEQ);
 
 # Cleanup
 system("rm $tmpTax");
